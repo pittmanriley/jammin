@@ -85,9 +85,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   cancelButton: {
-    color: "#f87171", // Red-ish cancel
+    color: "#9ca3af",
     fontSize: 16,
     marginBottom: 20,
+    textDecorationLine: 'underline'
   },
   songTitle: {
     fontSize: 24,
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   filledStar: {
-    color: "white", // Gold stars
+    color: "orange", // Gold stars
   },
   textArea: {
     backgroundColor: "#1e1e1e",

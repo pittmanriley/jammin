@@ -1,163 +1,75 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   FlatList,
   Image,
   StyleSheet,
   Dimensions,
+  ScrollView,
 } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const windowWidth = Dimensions.get("window").width;
-const numColumns = 3;
-const gap = 10;
-const sidePadding = 16;
-
-const totalGapSpace = gap * (numColumns - 1);
-const availableWidth = windowWidth - sidePadding * 2 - totalGapSpace;
-const imageSize = availableWidth / numColumns;
+const imageSize = 120; // Adjust as needed
 
 // Dummy images
-const musicImages = Array.from({ length: 30 }, () =>
+const dummyImages1 = Array.from({ length: 10 }, () =>
   require("../assets/the less I know the better.jpg")
 );
-
-// Dummy reviews
-const reviews = [
-  {
-    id: "1",
-    song: "The Less I Know The Better",
-    stars: "★★★★½",
-    text: "Finally they made a perfect song about heartbreak.",
-    user: "Whayden",
-    userImage: require("../assets/dummy profile.jpg"), // Replace with your profile images
-    songImage: require("../assets/the less I know the better.jpg"),
-  },
-  {
-    id: "2",
-    song: "Let It Happen",
-    stars: "★★★★★",
-    text: "The synth solo changed my life. A masterpiece.",
-    user: "Joe A",
-    userImage: require("../assets/dummy profile.jpg"),
-    songImage: require("../assets/the less I know the better.jpg"),
-  },
-  {
-    id: "3",
-    song: "Feels Like We Only Go Backwards",
-    stars: "★★★★",
-    text: "Catchy, hypnotic, emotional. Tame Impala at their best.",
-    user: "Jonathan Fujii",
-    userImage: require("../assets/dummy profile.jpg"),
-    songImage: require("../assets/the less I know the better.jpg"),
-  },
-  {
-    id: "4",
-    song: "Borderline",
-    stars: "★★★★★",
-    text: "Great song.",
-    user: "CJ Indart",
-    userImage: require("../assets/dummy profile.jpg"),
-    songImage: require("../assets/the less I know the better.jpg"),
-  },
-];
+const dummyImages2 = Array.from({ length: 10 }, () =>
+  require("../assets/babydoll.jpeg")
+);
+const dummyImages3 = Array.from({ length: 10 }, () =>
+  require("../assets/khalid.jpg")
+);
 
 export default function Feed() {
-  const [activeTab, setActiveTab] = useState("Music");
+  const renderHorizontalList = (data, title) => (
+    <FlatList
+      data={data}
+      horizontal
+      keyExtractor={(_, index) => index.toString()}
+      renderItem={({ item, index }) => (
+        <View style={styles.imageWrapper}>
+          <Image source={item} style={styles.image} />
+          <Text style={styles.imageLabel} numberOfLines={1}>
+            {title || "Untitled"}
+          </Text>
+        </View>
+      )}
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 16 }}
+    />
+  );
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <Text style={styles.header}>Jammin'</Text>
-
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          onPress={() => setActiveTab("Music")}
-          style={[styles.tabButton, activeTab === "Music" && styles.activeTab]}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "Music" && styles.activeTabText,
-            ]}
-          >
-            Music
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setActiveTab("Reviews")}
-          style={[
-            styles.tabButton,
-            activeTab === "Reviews" && styles.activeTab,
-          ]}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "Reviews" && styles.activeTabText,
-            ]}
-          >
-            Reviews
-          </Text>
-        </TouchableOpacity>
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Jammin'</Text>
+        <Ionicons
+          name="search"
+          size={28}
+          color="white"
+          style={styles.searchIcon}
+          onPress={() => console.log("Search pressed")}
+        />
       </View>
 
-      {/* Content */}
-      <View style={{ flex: 1 }}>
-        {/* Music Grid */}
-        <View
-          style={[styles.tabContent, activeTab !== "Music" && styles.hidden]}
-        >
-          <FlatList
-            data={musicImages}
-            keyExtractor={(_, index) => index.toString()}
-            numColumns={numColumns}
-            renderItem={({ item }) => (
-              <View style={styles.imageWrapper}>
-                <Image source={item} style={styles.image} />
-              </View>
-            )}
-            contentContainerStyle={styles.grid}
-          />
-        </View>
+      {/* Scrollable content */}
+      <ScrollView style={styles.scrollContainer}>
+        {/* Popular Albums Section */}
+        <Text style={styles.sectionTitle}>Popular albums</Text>
+        {renderHorizontalList(dummyImages1, "Currents")}
 
-        {/* Reviews List */}
-        <View
-          style={[styles.tabContent, activeTab !== "Reviews" && styles.hidden]}
-        >
-          <FlatList
-            data={reviews}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.reviewCard}>
-                {/* Top row: Song Name, Stars, User */}
-                <View style={styles.reviewHeader}>
-                  {/* Left: Song name and stars */}
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.songTitle}>{item.song}</Text>
-                    <Text style={styles.stars}>{item.stars}</Text>
-                  </View>
+        {/* Popular Songs Section */}
+        <Text style={styles.sectionTitle}>Popular songs</Text>
+        {renderHorizontalList(dummyImages2, "Babydoll")}
 
-                  {/* Right: Username and profile pic */}
-                  <View style={styles.userInfo}>
-                    <Image source={item.userImage} style={styles.userImage} />
-                    <Text style={styles.username}>{item.user}</Text>
-                  </View>
-                </View>
-
-                {/* Image + Description */}
-                <View style={styles.reviewBody}>
-                  <Image source={item.songImage} style={styles.songImage} />
-                  <Text style={styles.reviewText}>{item.text}</Text>
-                </View>
-              </View>
-            )}
-            contentContainerStyle={{ paddingBottom: 100 }}
-          />
-        </View>
-      </View>
+        {/* Friends' Songs Section */}
+        <Text style={styles.sectionTitle}>Friends' songs</Text>
+        {renderHorizontalList(dummyImages3, "Young Dumb & Broke")}
+      </ScrollView>
     </View>
   );
 }
@@ -168,109 +80,50 @@ const styles = StyleSheet.create({
     backgroundColor: "#121212",
     paddingTop: 50,
   },
+  headerContainer: {
+    alignItems: "center", // center the Jammin' title
+    justifyContent: "center",
+    position: "relative",
+    marginBottom: 20,
+  },
   header: {
     fontSize: 28,
+    marginTop: 10,
     fontWeight: "bold",
     color: "white",
     textAlign: "center",
-    marginTop: 10,
-    marginBottom: 20,
   },
-  tabs: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 10,
+  searchIcon: {
+    position: "absolute",
+    right: 20,
+    top: 10,
   },
-  tabButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    marginHorizontal: 5,
-    borderRadius: 20,
-  },
-  activeTab: {
-    backgroundColor: "#1DB954",
-  },
-  tabText: {
-    color: "white",
-    fontSize: 16,
-  },
-  activeTabText: {
-    fontWeight: "bold",
-  },
-  tabContent: {
+  scrollContainer: {
     flex: 1,
   },
-  hidden: {
-    display: "none",
-  },
-  grid: {
-    paddingHorizontal: sidePadding,
-    paddingTop: 10,
-    paddingBottom: 100,
+  sectionTitle: {
+    fontSize: 22,
+    color: "white",
+    fontWeight: "bold",
+    marginLeft: 16,
+    marginTop: 20,
+    marginBottom: 10,
   },
   imageWrapper: {
     width: imageSize,
-    height: imageSize,
-    marginBottom: gap,
-    marginRight: gap,
+    marginRight: 10,
+    alignItems: "center",
   },
   image: {
-    width: "100%",
-    height: "100%",
+    width: imageSize,
+    height: imageSize,
     borderRadius: 10,
   },
-  reviewCard: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-  },
-  reviewHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  songTitle: {
-    fontSize: 18,
-    color: "white",
-    fontWeight: "bold",
-  },
-  stars: {
-    fontSize: 16,
-    color: "#1DB954",
-  },
-  userImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  reviewBody: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  songImage: {
-    width: 60,
-    height: 90,
-    borderRadius: 5,
-    marginRight: 15,
-  },
-  reviewText: {
-    flex: 1,
-    color: "white",
-    fontSize: 15,
-  },
-  userInfo: {
-    alignItems: "center",
-    marginRight: 10,
-  },
-  username: {
-    color: "#9ca3af", // light gray color like Letterboxd
+  imageLabel: {
+    color: "#B0B0B0",
     fontSize: 14,
-    marginBottom: 5,
-  },
-  userImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    textAlign: "center",
+    marginTop: 5,
+    width: imageSize,
   },
 });

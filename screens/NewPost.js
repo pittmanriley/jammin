@@ -1,32 +1,43 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 
-export default function NewPost() {
+const SONGS = [
+  {
+    name: "The Less I Know The Better",
+    artist: "Tame Impala",
+    image: require("../assets/the less I know the better.jpg"),
+  },
+  {
+    name: "Babydoll",
+    artist: "Dominic Fike",
+    image: require("../assets/babydoll.jpeg"),
+  },
+  {
+    name: "American Teen",
+    artist: "Khalid",
+    image: require("../assets/khalid.jpg"),
+  },
+];
+
+export default function NewPost({ navigation }) {
+  // Accept navigation prop
   const [query, setQuery] = useState("");
+  const [matchedSong, setMatchedSong] = useState(null);
 
   const handleSearch = (text) => {
     setQuery(text);
 
-    if (text.includes("open.spotify.com/track/")) {
-      console.log("Detected a Spotify track link!");
-      // You can extract the track ID from the URL here
-      const trackId = extractSpotifyTrackId(text);
-      console.log("Spotify Track ID:", trackId);
-      // Later you could fetch metadata for this song automatically
-    } else {
-      console.log("Searching for song:", text);
-      // Here you'd perform a song search normally
-    }
-  };
-
-  const extractSpotifyTrackId = (url) => {
-    // Extract the track ID from a Spotify URL
-    const parts = url.split("/track/");
-    if (parts.length > 1) {
-      const trackId = parts[1].split("?")[0];
-      return trackId;
-    }
-    return null;
+    const match = SONGS.find((song) =>
+      song.name.toLowerCase().includes(text.toLowerCase())
+    );
+    setMatchedSong(match || null);
   };
 
   return (
@@ -39,6 +50,21 @@ export default function NewPost() {
         value={query}
         onChangeText={handleSearch}
       />
+
+      {matchedSong && (
+        <TouchableOpacity
+          style={styles.resultCard}
+          onPress={() =>
+            navigation.navigate("LeaveReview", { song: matchedSong })
+          }
+        >
+          <Image source={matchedSong.image} style={styles.resultImage} />
+          <View style={{ marginLeft: 15 }}>
+            <Text style={styles.songName}>{matchedSong.name}</Text>
+            <Text style={styles.artist}>{matchedSong.artist}</Text>
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -64,5 +90,28 @@ const styles = StyleSheet.create({
     padding: 15,
     color: "white",
     fontSize: 16,
+  },
+  resultCard: {
+    flexDirection: "row",
+    marginTop: 30,
+    alignItems: "center",
+    backgroundColor: "#1e1e1e",
+    borderRadius: 10,
+    padding: 10,
+  },
+  resultImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 5,
+  },
+  songName: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  artist: {
+    color: "#9ca3af",
+    fontSize: 14,
+    marginTop: 4,
   },
 });

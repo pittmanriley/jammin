@@ -7,6 +7,7 @@ import NewPost from "../screens/NewPost";
 import Profile from "../screens/Profile";
 import LeaveReview from "../screens/LeaveReview";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import InfoScreen from "../screens/InfoScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator(); // 👈 Create a Stack Navigator
@@ -25,7 +26,7 @@ function TabNavigator() {
 
           if (route.name === "Feed") {
             iconName = "home";
-          } else if (route.name === "NewPost") {
+          } else if (route.name === "Review") {
             iconName = "add-circle";
           } else if (route.name === "Profile") {
             iconName = "person";
@@ -36,7 +37,7 @@ function TabNavigator() {
       })}
     >
       <Tab.Screen name="Feed" component={Feed} />
-      <Tab.Screen name="NewPost" component={NewPost} />
+      <Tab.Screen name="Review" component={NewPost} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );
@@ -47,19 +48,20 @@ export default function RootNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        {/* Tabs */}
         <Stack.Screen
           name="MainTabs"
           component={TabNavigator}
           options={{ headerShown: false }}
         />
-        {/* LeaveReview page */}
         <Stack.Screen
           name="LeaveReview"
           component={LeaveReview}
-          options={{
-            headerShown: false, // we control the header manually in LeaveReview
-          }}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Info"
+          component={InfoScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

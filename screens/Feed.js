@@ -7,41 +7,65 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useNavigation } from "@react-navigation/native";
 
 const windowWidth = Dimensions.get("window").width;
 const imageSize = 120; // Adjust as needed
 
 // Dummy images
-const dummyImages1 = Array.from({ length: 10 }, () =>
-  require("../assets/the less I know the better.jpg")
-);
-const dummyImages2 = Array.from({ length: 10 }, () =>
-  require("../assets/babydoll.jpeg")
-);
-const dummyImages3 = Array.from({ length: 10 }, () =>
-  require("../assets/khalid.jpg")
-);
+const dummyImages1 = Array.from({ length: 10 }, () => ({
+  title: "Currents",
+  artist: "Tame Impala",
+  image: require("../assets/the less I know the better.jpg"),
+}));
+
+const dummyImages2 = Array.from({ length: 10 }, () => ({
+  title: "Babydoll",
+  artist: "Dominic Fike",
+  image: require("../assets/babydoll.jpeg"),
+}));
+
+const dummyImages3 = Array.from({ length: 10 }, () => ({
+  title: "Young Dumb & Broke",
+  artist: "Khalid",
+  image: require("../assets/khalid.jpg"),
+}));
 
 export default function Feed() {
-  const renderHorizontalList = (data, title) => (
-    <FlatList
-      data={data}
-      horizontal
-      keyExtractor={(_, index) => index.toString()}
-      renderItem={({ item, index }) => (
-        <View style={styles.imageWrapper}>
-          <Image source={item} style={styles.image} />
-          <Text style={styles.imageLabel} numberOfLines={1}>
-            {title || "Untitled"}
-          </Text>
-        </View>
-      )}
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 16 }}
-    />
-  );
+  const renderHorizontalList = (data) => {
+    const navigation = useNavigation();
+
+    return (
+      <FlatList
+        data={data}
+        horizontal
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("Info", {
+                title: item.title,
+                artist: item.artist,
+                image: item.image,
+              })
+            }
+          >
+            <View style={styles.imageWrapper}>
+              <Image source={item.image} style={styles.image} />
+              <Text style={styles.imageLabel} numberOfLines={1}>
+                {item.title}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>

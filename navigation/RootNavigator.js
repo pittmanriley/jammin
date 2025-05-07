@@ -6,11 +6,13 @@ import Feed from "../screens/Feed";
 import NewPost from "../screens/NewPost";
 import Profile from "../screens/Profile";
 import LeaveReview from "../screens/LeaveReview";
+import Login from "../screens/Login";
+import Signup from "../screens/Signup";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import InfoScreen from "../screens/InfoScreen";
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator(); // 👈 Create a Stack Navigator
+const Stack = createStackNavigator();
 
 // Your bottom tabs
 function TabNavigator() {
@@ -47,7 +49,17 @@ function TabNavigator() {
 export default function RootNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName="Login">
+        <Stack.Screen
+          name="Login"
+          component={Login}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Signup"
+          component={Signup}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="MainTabs"
           component={TabNavigator}

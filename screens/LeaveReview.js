@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
     fontSize: 16,
     marginBottom: 20,
-    textDecorationLine: 'underline'
+    textDecorationLine: "underline",
   },
   songTitle: {
     fontSize: 24,

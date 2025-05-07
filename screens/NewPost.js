@@ -6,6 +6,8 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 
 const SONGS = [
@@ -41,31 +43,33 @@ export default function NewPost({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>New Review</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Search song or paste Spotify link"
-        placeholderTextColor="#aaa"
-        value={query}
-        onChangeText={handleSearch}
-      />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Text style={styles.header}>New Review</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Search song or paste Spotify link"
+          placeholderTextColor="#aaa"
+          value={query}
+          onChangeText={handleSearch}
+        />
 
-      {matchedSong && (
-        <TouchableOpacity
-          style={styles.resultCard}
-          onPress={() =>
-            navigation.navigate("LeaveReview", { song: matchedSong })
-          }
-        >
-          <Image source={matchedSong.image} style={styles.resultImage} />
-          <View style={{ marginLeft: 15 }}>
-            <Text style={styles.songName}>{matchedSong.name}</Text>
-            <Text style={styles.artist}>{matchedSong.artist}</Text>
-          </View>
-        </TouchableOpacity>
-      )}
-    </View>
+        {matchedSong && (
+          <TouchableOpacity
+            style={styles.resultCard}
+            onPress={() =>
+              navigation.navigate("LeaveReview", { song: matchedSong })
+            }
+          >
+            <Image source={matchedSong.image} style={styles.resultImage} />
+            <View style={{ marginLeft: 15 }}>
+              <Text style={styles.songName}>{matchedSong.name}</Text>
+              <Text style={styles.artist}>{matchedSong.artist}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 

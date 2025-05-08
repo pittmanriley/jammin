@@ -8,17 +8,57 @@ import {
   Image,
   Keyboard,
   TouchableWithoutFeedback,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { colors } from "../theme/colors";
+import { auth } from "../firebaseConfig";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
-  const handleLogin = () => {
-    navigation.navigate("MainTabs");
+  const handleLogin = async () => {
+    // Validate inputs
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Sign in with email and password
+      await signInWithEmailAndPassword(auth, email, password);
+
+      // Navigate to MainTabs on successful login
+      navigation.navigate("MainTabs");
+    } catch (error) {
+      let errorMessage;
+      console.log(error);
+      switch (error.code) {
+        case "auth/invalid-email":
+          errorMessage = "Not a valid email address";
+          break;
+        case "auth/invalid-credentials":
+          errorMessage = "That's not a valid email address";
+          break;
+        case "auth/user-disabled":
+          errorMessage = "This account has been disabled";
+          break;
+        case "auth/user-not-found":
+          errorMessage = "We couldn't find an account with that email";
+          break;
+        default:
+          errorMessage = "Something went wrong. Please try again";
+      }
+
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,6 +78,7 @@ export default function Login() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            editable={!loading}
           />
 
           <TextInput
@@ -47,15 +88,23 @@ export default function Login() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            editable={!loading}
           />
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Login</Text>
+          <TouchableOpacity
+            style={[styles.loginButton, loading && styles.disabledButton]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            <Text style={styles.loginButtonText}>
+              {loading ? "Logging in..." : "Login"}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.signupButton}
             onPress={() => navigation.navigate("Signup")}
+            disabled={loading}
           >
             <Text style={styles.signupButtonText}>
               Don't have an account? Sign up
@@ -104,6 +153,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     marginTop: 10,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   loginButtonText: {
     color: colors.text.primary,

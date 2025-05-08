@@ -6,20 +6,82 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { colors } from "../theme/colors";
+import { auth, db } from "../firebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function Signup() {
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
 
-  const handleSignup = () => {
-    // TODO: Handle signup
-    navigation.navigate("MainTabs");
+  const handleSignup = async () => {
+    // Validate inputs
+    if (!email || !password || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters long");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Create user with email and password
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // Create user document in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email: email,
+        createdAt: new Date().toISOString(),
+      });
+
+      Alert.alert("Success", "Account created successfully!");
+      navigation.navigate("MainTabs");
+    } catch (error) {
+      let errorMessage;
+
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          errorMessage =
+            "That email is already registered. Try logging in instead";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "That's not a valid email address";
+          break;
+        case "auth/weak-password":
+          errorMessage = "Your password needs to be at least 6 characters long";
+          break;
+        case "permission-denied":
+          errorMessage =
+            "We're having trouble creating your account. Please try again";
+          break;
+        default:
+          errorMessage = "Something went wrong. Please try again";
+      }
+
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,21 +94,13 @@ export default function Signup() {
       <View style={styles.formContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Username"
-          placeholderTextColor={colors.input.placeholder}
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-        />
-
-        <TextInput
-          style={styles.input}
           placeholder="Email"
           placeholderTextColor={colors.input.placeholder}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={!loading}
         />
 
         <TextInput
@@ -56,6 +110,7 @@ export default function Signup() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          editable={!loading}
         />
 
         <TextInput
@@ -65,15 +120,23 @@ export default function Signup() {
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
+          editable={!loading}
         />
 
-        <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
-          <Text style={styles.signupButtonText}>Create Account</Text>
+        <TouchableOpacity
+          style={[styles.signupButton, loading && styles.disabledButton]}
+          onPress={handleSignup}
+          disabled={loading}
+        >
+          <Text style={styles.signupButtonText}>
+            {loading ? "Creating Account..." : "Create Account"}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.loginButton}
           onPress={() => navigation.navigate("Login")}
+          disabled={loading}
         >
           <Text style={styles.loginButtonText}>
             Already have an account? Login
@@ -122,6 +185,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     marginTop: 10,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   signupButtonText: {
     color: colors.text.primary,

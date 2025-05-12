@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,68 +8,248 @@ import {
   StyleSheet,
   Keyboard,
   TouchableWithoutFeedback,
+  FlatList,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
-
-const SONGS = [
-  {
-    name: "The Less I Know The Better",
-    artist: "Tame Impala",
-    image: require("../assets/the less I know the better.jpg"),
-  },
-  {
-    name: "Babydoll",
-    artist: "Dominic Fike",
-    image: require("../assets/babydoll.jpeg"),
-  },
-  {
-    name: "American Teen",
-    artist: "Khalid",
-    image: require("../assets/khalid.jpg"),
-  },
-];
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { searchSpotify, isSpotifyConnected } from "../services/spotifyService";
 
 export default function NewPost({ navigation }) {
-  // Accept navigation prop
   const [query, setQuery] = useState("");
-  const [matchedSong, setMatchedSong] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [spotifyConnected, setSpotifyConnected] = useState(false);
+  const [searchType, setSearchType] = useState("track,album");
 
-  const handleSearch = (text) => {
-    setQuery(text);
+  useEffect(() => {
+    checkSpotifyConnection();
+  }, []);
 
-    const match = SONGS.find((song) =>
-      song.name.toLowerCase().includes(text.toLowerCase())
-    );
-    setMatchedSong(match || null);
+  const checkSpotifyConnection = async () => {
+    const connected = await isSpotifyConnected();
+    setSpotifyConnected(connected);
   };
 
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <Text style={styles.header}>New Review</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Search song or paste Spotify link"
-          placeholderTextColor="#aaa"
-          value={query}
-          onChangeText={handleSearch}
-        />
+  const handleSearch = async () => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
-        {matchedSong && (
+    try {
+      setLoading(true);
+      const results = await searchSpotify(query, searchType, 20);
+      
+      let formattedResults = [];
+      
+      if (results.tracks && results.tracks.items) {
+        const trackResults = results.tracks.items.map(track => ({
+          id: track.id,
+          name: track.name,
+          artist: track.artists.map((a) => a.name).join(", "),
+          album: track.album.name,
+          imageUri: track.album.images[0]?.url,
+          spotifyUri: track.uri,
+          type: 'track',
+        }));
+        formattedResults = [...formattedResults, ...trackResults];
+      }
+      
+      if (results.albums && results.albums.items) {
+        const albumResults = results.albums.items.map(album => ({
+          id: album.id,
+          name: album.name,
+          artist: album.artists.map((a) => a.name).join(", "),
+          album: null,
+          imageUri: album.images[0]?.url,
+          spotifyUri: album.uri,
+          type: 'album',
+        }));
+        formattedResults = [...formattedResults, ...albumResults];
+      }
+      
+      setSearchResults(formattedResults);
+    } catch (error) {
+      console.error("Error searching Spotify:", error);
+      Alert.alert("Error", "Failed to search Spotify. Please try again.");
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderSearchResults = () => {
+    if (!spotifyConnected) {
+      return (
+        <View style={styles.spotifyConnectContainer}>
+          <Text style={styles.spotifyConnectTitle}>Connect to Spotify</Text>
+          <Text style={styles.spotifyConnectText}>
+            You need to connect your Spotify account to search for songs and albums.
+          </Text>
+          <TouchableOpacity
+            style={styles.connectButton}
+            onPress={() => navigation.navigate("SpotifyAuth")}
+          >
+            <Text style={styles.connectButtonText}>Connect Spotify</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1DB954" />
+          <Text style={styles.loadingText}>Searching...</Text>
+        </View>
+      );
+    }
+
+    if (searchResults.length === 0 && query.trim() !== "") {
+      return (
+        <View style={styles.noResultsContainer}>
+          <Text style={styles.noResultsText}>No results found</Text>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        data={searchResults}
+        keyExtractor={(item) => `${item.type}-${item.id}`}
+        renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.resultCard}
-            onPress={() =>
-              navigation.navigate("LeaveReview", { song: matchedSong })
-            }
+            onPress={() => {
+              if (item.type === 'album') {
+                navigation.navigate("AlbumScreen", {
+                  id: item.id,
+                  title: item.name,
+                  artist: item.artist,
+                  imageUri: item.imageUri,
+                  spotifyUri: item.spotifyUri
+                });
+              } else {
+                navigation.navigate("Info", {
+                  id: item.id,
+                  title: item.name,
+                  artist: item.artist,
+                  imageUri: item.imageUri,
+                  type: item.type,
+                  spotifyUri: item.spotifyUri
+                });
+              }
+            }}
           >
-            <Image source={matchedSong.image} style={styles.resultImage} />
-            <View style={{ marginLeft: 15 }}>
-              <Text style={styles.songName}>{matchedSong.name}</Text>
-              <Text style={styles.artist}>{matchedSong.artist}</Text>
+            {item.imageUri ? (
+              <Image
+                source={{ uri: item.imageUri }}
+                style={styles.resultImage}
+              />
+            ) : (
+              <View style={styles.placeholderImage}>
+                <Ionicons name="musical-note" size={24} color="#666" />
+              </View>
+            )}
+            <View style={styles.resultTextContainer}>
+              <Text style={styles.songName}>{item.name}</Text>
+              <Text style={styles.artist}>{item.artist}</Text>
+              {item.album && <Text style={styles.albumName}>{item.album}</Text>}
+              <Text style={styles.itemType}>
+                {item.type === 'track' ? 'Song' : 'Album'}
+              </Text>
             </View>
           </TouchableOpacity>
         )}
+      />
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>New Review</Text>
+      
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Search for songs or albums"
+          placeholderTextColor="#aaa"
+          value={query}
+          onChangeText={setQuery}
+          onSubmitEditing={handleSearch}
+          returnKeyType="search"
+        />
+        <TouchableOpacity 
+          style={styles.searchButton}
+          onPress={handleSearch}
+        >
+          <Ionicons name="search" size={24} color="white" />
+        </TouchableOpacity>
       </View>
-    </TouchableWithoutFeedback>
+      
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            searchType.includes('track') && styles.filterButtonActive
+          ]}
+          onPress={() => {
+            let newSearchType;
+            if (searchType.includes('track')) {
+              newSearchType = searchType.replace('track,', '').replace(',track', '').replace('track', '');
+            } else {
+              newSearchType = searchType ? `${searchType},track` : 'track';
+            }
+            setSearchType(newSearchType);
+            
+            // Automatically search after changing filter if there's a query
+            if (query.trim()) {
+              setTimeout(() => handleSearch(), 100);
+            }
+          }}
+        >
+          <Text style={[
+            styles.filterButtonText,
+            searchType.includes('track') && styles.filterButtonTextActive
+          ]}>
+            Songs
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            searchType.includes('album') && styles.filterButtonActive
+          ]}
+          onPress={() => {
+            let newSearchType;
+            if (searchType.includes('album')) {
+              newSearchType = searchType.replace('album,', '').replace(',album', '').replace('album', '');
+            } else {
+              newSearchType = searchType ? `${searchType},album` : 'album';
+            }
+            setSearchType(newSearchType);
+            
+            // Automatically search after changing filter if there's a query
+            if (query.trim()) {
+              setTimeout(() => handleSearch(), 100);
+            }
+          }}
+        >
+          <Text style={[
+            styles.filterButtonText,
+            searchType.includes('album') && styles.filterButtonTextActive
+          ]}>
+            Albums
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.resultsContainer}>
+        {renderSearchResults()}
+      </View>
+    </View>
   );
 }
 
@@ -85,37 +265,147 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
     marginTop: 10,
-    marginBottom: 30,
+    marginBottom: 20,
     textAlign: "center",
   },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
   input: {
+    flex: 1,
     backgroundColor: "#1e1e1e",
     borderRadius: 10,
     padding: 15,
     color: "white",
     fontSize: 16,
+    marginRight: 10,
+  },
+  searchButton: {
+    backgroundColor: "#1DB954",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  filterContainer: {
+    flexDirection: "row",
+    marginBottom: 20,
+  },
+  filterButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginRight: 10,
+    backgroundColor: "#2A2A2A",
+  },
+  filterButtonActive: {
+    backgroundColor: "#1DB954",
+  },
+  filterButtonText: {
+    color: "#999",
+    fontSize: 14,
+  },
+  filterButtonTextActive: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  resultsContainer: {
+    flex: 1,
   },
   resultCard: {
     flexDirection: "row",
-    marginTop: 30,
+    marginBottom: 15,
     alignItems: "center",
     backgroundColor: "#1e1e1e",
     borderRadius: 10,
-    padding: 10,
+    padding: 12,
   },
   resultImage: {
     width: 60,
     height: 60,
     borderRadius: 5,
   },
+  placeholderImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 5,
+    backgroundColor: "#333",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  resultTextContainer: {
+    flex: 1,
+    marginLeft: 15,
+  },
   songName: {
     color: "white",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
   artist: {
     color: "#9ca3af",
     fontSize: 14,
+    marginTop: 2,
+  },
+  albumName: {
+    color: "#666",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  itemType: {
+    color: "#1DB954",
+    fontSize: 12,
     marginTop: 4,
+    fontWeight: "bold",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    color: "white",
+    marginTop: 10,
+  },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noResultsText: {
+    color: "#9ca3af",
+    fontSize: 16,
+  },
+  spotifyConnectContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  spotifyConnectTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "white",
+    marginBottom: 10,
+  },
+  spotifyConnectText: {
+    fontSize: 16,
+    color: "#9ca3af",
+    textAlign: "center",
+    marginBottom: 30,
+  },
+  connectButton: {
+    backgroundColor: "#1DB954",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+  },
+  connectButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

@@ -33,8 +33,8 @@ export default function Login() {
       // Sign in with email and password
       await signInWithEmailAndPassword(auth, email, password);
 
-      // Navigate to MainTabs on successful login
-      navigation.navigate("MainTabs");
+      // Navigate to SpotifyAuth after successful login
+      navigation.navigate("SpotifyAuth");
     } catch (error) {
       let errorMessage;
       console.log(error);

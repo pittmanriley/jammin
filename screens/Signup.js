@@ -16,6 +16,7 @@ import { doc, setDoc } from "firebase/firestore";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,8 +24,14 @@ export default function Signup() {
 
   const handleSignup = async () => {
     // Validate inputs
-    if (!email || !password || !confirmPassword) {
+    if (!email || !username || !password || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+    
+    // Validate username (no spaces, special characters allowed)
+    if (username.includes(" ")) {
+      Alert.alert("Error", "Username cannot contain spaces");
       return;
     }
 
@@ -51,7 +58,10 @@ export default function Signup() {
       // Create user document in Firestore
       await setDoc(doc(db, "users", user.uid), {
         email: email,
+        username: username,
+        displayName: username, // Use username as initial display name
         createdAt: new Date().toISOString(),
+        savedItems: [],
       });
 
       Alert.alert("Success", "Account created successfully!");
@@ -99,6 +109,16 @@ export default function Signup() {
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
+          autoCapitalize="none"
+          editable={!loading}
+        />
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
+          placeholderTextColor={colors.input.placeholder}
+          value={username}
+          onChangeText={setUsername}
           autoCapitalize="none"
           editable={!loading}
         />

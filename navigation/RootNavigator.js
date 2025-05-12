@@ -2,14 +2,23 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
-import Feed from "../screens/Feed";
-import NewPost from "../screens/NewPost";
-import Profile from "../screens/Profile";
+import SpotifyAuth from '../screens/SpotifyAuth';
+import Feed from '../screens/Feed';
+import Profile from '../screens/Profile';
+import Info from '../screens/Info';
+import Search from '../screens/Search';
+import AlbumScreen from '../screens/AlbumScreen';
+import ArtistScreen from '../screens/ArtistScreen';
 import LeaveReview from "../screens/LeaveReview";
 import Login from "../screens/Login";
 import Signup from "../screens/Signup";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import InfoScreen from "../screens/InfoScreen";
+import NewPost from "../screens/NewPost";
+import Stats from "../screens/Stats";
+import AllAlbums from "../screens/AllAlbums";
+import AllSongs from "../screens/AllSongs";
+import AllReviews from "../screens/AllReviews";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -73,6 +82,46 @@ export default function RootNavigator() {
         <Stack.Screen
           name="Info"
           component={InfoScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SpotifyAuth"
+          component={SpotifyAuth}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Stats"
+          component={Stats}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Search"
+          component={Search}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AlbumScreen"
+          component={AlbumScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Artist"
+          component={ArtistScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AllAlbums"
+          component={AllAlbums}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AllSongs"
+          component={AllSongs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AllReviews"
+          component={AllReviews}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

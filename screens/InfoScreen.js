@@ -123,12 +123,38 @@ export default function InfoScreen({ route, navigation }) {
     if (spotifyUri) {
       Linking.canOpenURL(spotifyUri).then(supported => {
         if (supported) {
+          // Try to open in Spotify app
           Linking.openURL(spotifyUri);
         } else {
           // If Spotify app is not installed, open in web browser
-          const webUrl = spotifyUri.replace('spotify:', 'https://open.spotify.com/');
+          let webUrl;
+          
+          if (spotifyUri.includes('spotify:track:')) {
+            // Format for tracks: spotify:track:5ch484wWUkTPp6saoxACAN -> https://open.spotify.com/track/5ch484wWUkTPp6saoxACAN
+            const trackId = spotifyUri.split('spotify:track:')[1];
+            webUrl = `https://open.spotify.com/track/${trackId}`;
+          } else if (spotifyUri.includes('spotify:album:')) {
+            // Format for albums: spotify:album:4StaOoKvc1slai3SMaOhCZ -> https://open.spotify.com/album/4StaOoKvc1slai3SMaOhCZ
+            const albumId = spotifyUri.split('spotify:album:')[1];
+            webUrl = `https://open.spotify.com/album/${albumId}`;
+          } else if (spotifyUri.includes('spotify:artist:')) {
+            // Format for artists: spotify:artist:123456 -> https://open.spotify.com/artist/123456
+            const artistId = spotifyUri.split('spotify:artist:')[1];
+            webUrl = `https://open.spotify.com/artist/${artistId}`;
+          } else {
+            // Fallback for other types
+            webUrl = spotifyUri.replace('spotify:', 'https://open.spotify.com/').replace(/:/g, '/');
+          }
+          
+          console.log('Opening Spotify web URL:', webUrl);
           Linking.openURL(webUrl);
         }
+      }).catch(err => {
+        console.error('Error checking if can open URL:', err);
+        // Fallback to web URL if there's an error
+        const trackId = spotifyUri.split('spotify:track:')[1] || spotifyUri.split('spotify:album:')[1];
+        const webUrl = `https://open.spotify.com/${type}/${trackId}`;
+        Linking.openURL(webUrl);
       });
     } else {
       Alert.alert('Error', 'Spotify link not available for this item');

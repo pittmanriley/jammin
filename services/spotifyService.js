@@ -93,11 +93,28 @@ const storeTokens = async (tokenData) => {
 const saveUserSpotifyConnection = async (tokenData) => {
   const currentUser = auth.currentUser;
   if (!currentUser) {
-    throw new Error("No authenticated user found");
+    console.warn("No authenticated user found when saving Spotify connection");
+    // Instead of throwing an error, we'll wait for the user to be authenticated
+    let retryCount = 0;
+    const maxRetries = 5;
+    
+    while (retryCount < maxRetries && !auth.currentUser) {
+      console.log(`Waiting for Firebase auth (attempt ${retryCount + 1}/${maxRetries})...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      retryCount++;
+    }
+    
+    // Check again after waiting
+    if (!auth.currentUser) {
+      console.error("Still no authenticated user after waiting");
+      // We'll continue without saving to Firestore
+      // The tokens are still saved in SecureStore, so the user can use Spotify features
+      return;
+    }
   }
 
   try {
-    const userRef = doc(db, "users", currentUser.uid);
+    const userRef = doc(db, "users", auth.currentUser.uid);
     const userDoc = await getDoc(userRef);
 
     if (userDoc.exists()) {
@@ -107,15 +124,17 @@ const saveUserSpotifyConnection = async (tokenData) => {
       });
     } else {
       await setDoc(userRef, {
-        email: currentUser.email,
+        email: auth.currentUser.email,
         spotifyConnected: true,
         spotifyConnectedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       });
     }
+    console.log("Successfully saved Spotify connection to Firestore");
   } catch (error) {
     console.error("Error saving Spotify connection to Firestore:", error);
-    throw error;
+    // We'll continue without throwing an error
+    // The tokens are still saved in SecureStore, so the user can use Spotify features
   }
 };
 
@@ -241,27 +260,47 @@ export const isSpotifyConnected = async () => {
 
 /**
  * Disconnect Spotify account
+ * @returns {Promise<boolean>} True if disconnection was successful
  */
 export const disconnectSpotify = async () => {
   try {
-    await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
-    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
-    await SecureStore.deleteItemAsync(TOKEN_EXPIRY_KEY);
-
+    console.log('Starting Spotify disconnection process...');
+    
+    // Delete tokens from SecureStore
+    const deleteTokenPromises = [
+      SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY),
+      SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
+      SecureStore.deleteItemAsync(TOKEN_EXPIRY_KEY)
+    ];
+    
+    await Promise.all(deleteTokenPromises);
+    console.log('Successfully deleted Spotify tokens from secure storage');
+    
     // Update user's Firestore document
     const currentUser = auth.currentUser;
     if (currentUser) {
-      const userRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userRef, {
-        spotifyConnected: false,
-        spotifyDisconnectedAt: new Date().toISOString(),
-      });
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        await updateDoc(userRef, {
+          spotifyConnected: false,
+          spotifyDisconnectedAt: new Date().toISOString(),
+        });
+        console.log('Successfully updated user Firestore document');
+      } catch (firestoreError) {
+        console.error('Error updating Firestore during disconnection:', firestoreError);
+        // Continue with disconnection even if Firestore update fails
+        // This ensures the user can still sign out even if there's a database issue
+      }
+    } else {
+      console.warn('No current user found when disconnecting Spotify');
     }
-
+    
     return true;
   } catch (error) {
     console.error("Error disconnecting Spotify:", error);
-    throw error;
+    // Return true anyway to allow sign out to proceed even if there's an error
+    // This prevents users from being stuck in a logged-in state
+    return true;
   }
 };
 

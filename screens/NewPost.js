@@ -20,7 +20,17 @@ export default function NewPost({ navigation }) {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
-  const [searchType, setSearchType] = useState("track,album");
+  // Remove searchType as we're not using it anymore
+  const [selectedFilters, setSelectedFilters] = useState({
+    songs: false,
+    albums: false
+  });
+  
+  // Add a state to track all fetched results
+  const [allResults, setAllResults] = useState({
+    tracks: [],
+    albums: []
+  });
 
   useEffect(() => {
     checkSpotifyConnection();
@@ -39,12 +49,15 @@ export default function NewPost({ navigation }) {
 
     try {
       setLoading(true);
-      const results = await searchSpotify(query, searchType, 20);
+      // Always search for both types to get all results
+      const results = await searchSpotify(query, 'track,album', 20);
       
-      let formattedResults = [];
+      // Process and store all results
+      let tracks = [];
+      let albums = [];
       
       if (results.tracks && results.tracks.items) {
-        const trackResults = results.tracks.items.map(track => ({
+        tracks = results.tracks.items.map(track => ({
           id: track.id,
           name: track.name,
           artist: track.artists.map((a) => a.name).join(", "),
@@ -53,11 +66,10 @@ export default function NewPost({ navigation }) {
           spotifyUri: track.uri,
           type: 'track',
         }));
-        formattedResults = [...formattedResults, ...trackResults];
       }
       
       if (results.albums && results.albums.items) {
-        const albumResults = results.albums.items.map(album => ({
+        albums = results.albums.items.map(album => ({
           id: album.id,
           name: album.name,
           artist: album.artists.map((a) => a.name).join(", "),
@@ -66,10 +78,13 @@ export default function NewPost({ navigation }) {
           spotifyUri: album.uri,
           type: 'album',
         }));
-        formattedResults = [...formattedResults, ...albumResults];
       }
       
-      setSearchResults(formattedResults);
+      // Store all results
+      setAllResults({ tracks, albums });
+      
+      // Apply filters to determine what to display
+      updateDisplayedResults();
     } catch (error) {
       console.error("Error searching Spotify:", error);
       Alert.alert("Error", "Failed to search Spotify. Please try again.");
@@ -77,6 +92,26 @@ export default function NewPost({ navigation }) {
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Separate function to update displayed results based on filters
+  const updateDisplayedResults = () => {
+    let formattedResults = [];
+    
+    // If songs filter is active, show only songs
+    if (selectedFilters.songs) {
+      formattedResults = [...allResults.tracks];
+    }
+    // If albums filter is active, show only albums
+    else if (selectedFilters.albums) {
+      formattedResults = [...allResults.albums];
+    }
+    // If no filters are active, show both
+    else {
+      formattedResults = [...allResults.tracks, ...allResults.albums];
+    }
+    
+    setSearchResults(formattedResults);
   };
 
   const renderSearchResults = () => {
@@ -192,26 +227,26 @@ export default function NewPost({ navigation }) {
         <TouchableOpacity
           style={[
             styles.filterButton,
-            searchType.includes('track') && styles.filterButtonActive
+            selectedFilters.songs && styles.filterButtonActive
           ]}
           onPress={() => {
-            let newSearchType;
-            if (searchType.includes('track')) {
-              newSearchType = searchType.replace('track,', '').replace(',track', '').replace('track', '');
-            } else {
-              newSearchType = searchType ? `${searchType},track` : 'track';
-            }
-            setSearchType(newSearchType);
+            // Toggle songs filter
+            const newSongsFilter = !selectedFilters.songs;
             
-            // Automatically search after changing filter if there's a query
-            if (query.trim()) {
-              setTimeout(() => handleSearch(), 100);
-            }
+            // If turning on songs, turn off albums
+            const newFilters = {
+              songs: newSongsFilter,
+              albums: newSongsFilter ? false : selectedFilters.albums
+            };
+            setSelectedFilters(newFilters);
+            
+            // Update displayed results immediately
+            setTimeout(() => updateDisplayedResults(), 10);
           }}
         >
           <Text style={[
             styles.filterButtonText,
-            searchType.includes('track') && styles.filterButtonTextActive
+            selectedFilters.songs && styles.filterButtonTextActive
           ]}>
             Songs
           </Text>
@@ -220,26 +255,26 @@ export default function NewPost({ navigation }) {
         <TouchableOpacity
           style={[
             styles.filterButton,
-            searchType.includes('album') && styles.filterButtonActive
+            selectedFilters.albums && styles.filterButtonActive
           ]}
           onPress={() => {
-            let newSearchType;
-            if (searchType.includes('album')) {
-              newSearchType = searchType.replace('album,', '').replace(',album', '').replace('album', '');
-            } else {
-              newSearchType = searchType ? `${searchType},album` : 'album';
-            }
-            setSearchType(newSearchType);
+            // Toggle albums filter
+            const newAlbumsFilter = !selectedFilters.albums;
             
-            // Automatically search after changing filter if there's a query
-            if (query.trim()) {
-              setTimeout(() => handleSearch(), 100);
-            }
+            // If turning on albums, turn off songs
+            const newFilters = {
+              songs: newAlbumsFilter ? false : selectedFilters.songs,
+              albums: newAlbumsFilter
+            };
+            setSelectedFilters(newFilters);
+            
+            // Update displayed results immediately
+            setTimeout(() => updateDisplayedResults(), 10);
           }}
         >
           <Text style={[
             styles.filterButtonText,
-            searchType.includes('album') && styles.filterButtonTextActive
+            selectedFilters.albums && styles.filterButtonTextActive
           ]}>
             Albums
           </Text>

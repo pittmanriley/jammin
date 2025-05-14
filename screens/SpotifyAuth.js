@@ -32,7 +32,32 @@ export default function SpotifyAuth() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    checkSpotifyConnection();
+    const initializeAuth = async () => {
+      try {
+        // Check if we're coming from a complete sign-out
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        const completeSignout = await AsyncStorage.getItem('complete_signout');
+        
+        if (completeSignout === 'true') {
+          // Clear the flag
+          await AsyncStorage.removeItem('complete_signout');
+          console.log('Detected complete sign-out, cleared flag');
+          
+          // Wait a moment before checking connection to ensure Firebase auth is fully initialized
+          setTimeout(() => {
+            setLoading(false);
+          }, 1000);
+        } else {
+          // Normal flow - check if already connected
+          checkSpotifyConnection();
+        }
+      } catch (error) {
+        console.error('Error in initialization:', error);
+        setLoading(false);
+      }
+    };
+    
+    initializeAuth();
     
     // Set up polling to check for authentication success every 2 seconds
     const authCheckInterval = setInterval(() => {
@@ -142,9 +167,30 @@ export default function SpotifyAuth() {
   const handleAuthorizationCode = async (code) => {
     try {
       setLoading(true);
+      console.log('Exchanging authorization code for token...');
       
-      // Exchange the code for an access token
-      await exchangeCodeForToken(code);
+      // Add retry mechanism for token exchange
+      let retryCount = 0;
+      const maxRetries = 3;
+      let success = false;
+      
+      while (retryCount < maxRetries && !success) {
+        try {
+          // Exchange the code for an access token
+          await exchangeCodeForToken(code);
+          success = true;
+          console.log('Token exchange successful!');
+        } catch (tokenError) {
+          console.error(`Token exchange attempt ${retryCount + 1} failed:`, tokenError);
+          retryCount++;
+          if (retryCount < maxRetries) {
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+          } else {
+            throw tokenError; // Re-throw after all retries fail
+          }
+        }
+      }
 
       // Navigate to main tabs
       navigation.replace("MainTabs");

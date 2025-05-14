@@ -65,6 +65,11 @@ export default function Login() {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         <View style={styles.headerContainer}>
+          <Image
+            source={require("../assets/Adobe Express - file (1).png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.header}>Jammin'</Text>
           <Text style={styles.subheader}>Your Music Community</Text>
         </View>
@@ -125,6 +130,12 @@ const styles = StyleSheet.create({
   headerContainer: {
     alignItems: "center",
     marginBottom: 50,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 10,
+    marginTop: 20,
   },
   header: {
     fontSize: 42,

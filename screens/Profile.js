@@ -17,7 +17,9 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { auth, db, storage } from "../firebaseConfig";
+import { signOut } from "firebase/auth";
 import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { disconnectSpotify } from "../services/spotifyService";
 import * as ImagePicker from "expo-image-picker";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -38,6 +40,7 @@ export default function Profile({ navigation: propNavigation }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [userReviews, setUserReviews] = useState([]);
   const [username, setUsername] = useState("");
+  const [menuVisible, setMenuVisible] = useState(false);
 
   // Filter saved items by type
   const savedAlbums = savedItems.filter((item) => item.type === "album");
@@ -116,7 +119,7 @@ export default function Profile({ navigation: propNavigation }) {
           userData.displayName || currentUser.displayName || "User"
         );
         setBio(userData.bio || "No bio yet");
-        setProfilePicUrl(userData.profilePicUrl || currentUser.photoURL);
+        setProfilePicUrl(userData.profilePicUrl || currentUser.photoURL || require('../assets/dummy profile.jpg'));
         setUsername(userData.username || "");
 
         // Get saved items
@@ -171,6 +174,64 @@ export default function Profile({ navigation: propNavigation }) {
     // Reset to original values from the database
     loadUserProfile();
     setEditMode(false);
+  };
+  
+  const confirmSignOut = () => {
+    setMenuVisible(false);
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: handleSignOut,
+        },
+      ]
+    );
+  };
+  
+  const handleSignOut = async () => {
+    try {
+      setLoading(true);
+      console.log("Starting sign out process...");
+      
+      // Store a flag to indicate we're signing out completely (not just Spotify)
+      try {
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        await AsyncStorage.setItem('complete_signout', 'true');
+        console.log('Set complete_signout flag in AsyncStorage');
+      } catch (storageError) {
+        console.error('Error setting signout flag:', storageError);
+      }
+      
+      // Disconnect from Spotify first
+      try {
+        await disconnectSpotify();
+        console.log("Successfully disconnected from Spotify");
+      } catch (spotifyError) {
+        console.error("Error disconnecting from Spotify:", spotifyError);
+        // Continue with sign out even if Spotify disconnect fails
+      }
+      
+      // Sign out from Firebase
+      await signOut(auth);
+      console.log("Successfully signed out from Firebase");
+      
+      // Navigate to Login screen instead of SpotifyAuth
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    } catch (error) {
+      console.error("Error signing out:", error);
+      Alert.alert("Error", "Failed to sign out. Please try again.");
+      setLoading(false);
+    }
   };
 
   const pickImage = async () => {
@@ -258,14 +319,24 @@ export default function Profile({ navigation: propNavigation }) {
             style={styles.imageWrapper}
             onPress={() => {
               if (item.id) {
-                navigation.navigate("Info", {
-                  id: item.id,
-                  title: item.title,
-                  artist: item.artist,
-                  imageUri: item.imageUri,
-                  type: item.type,
-                  spotifyUri: item.spotifyUri,
-                });
+                if (item.type === 'album') {
+                  navigation.navigate("AlbumScreen", {
+                    id: item.id,
+                    title: item.title,
+                    artist: item.artist,
+                    imageUri: item.imageUri,
+                    spotifyUri: item.spotifyUri
+                  });
+                } else {
+                  navigation.navigate("Info", {
+                    id: item.id,
+                    title: item.title,
+                    artist: item.artist,
+                    imageUri: item.imageUri,
+                    type: item.type,
+                    spotifyUri: item.spotifyUri,
+                  });
+                }
               }
             }}
           >
@@ -281,43 +352,79 @@ export default function Profile({ navigation: propNavigation }) {
         contentContainerStyle={{ paddingHorizontal: 16 }}
       />
     );
-  }
+  };
 
   // Reviews functionality will be implemented in a future update
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={["#1DB954"]}
-          tintColor={"#1DB954"}
-        />
-      }>
-      <View style={styles.topBar}>
-        {/* Stats Icon */}
-        <TouchableOpacity style={styles.statsButton} onPress={() => navigation.navigate("Stats")}>
-          <Ionicons name="stats-chart-outline" size={24} color="white" />
-        </TouchableOpacity>
-        
-        {/* Edit/Save Button */}
-        {editMode ? (
-          <View style={styles.editButtonsContainer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={cancelEdit}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+    <>
+      {/* Menu Modal */}
+      <Modal
+        visible={menuVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setMenuVisible(false)}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setMenuVisible(false);
+                setEditMode(true);
+              }}
+            >
+              <Ionicons name="create-outline" size={22} color="white" style={styles.menuIcon} />
+              <Text style={styles.menuText}>Edit Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
-              <Text style={styles.saveButtonText}>Save</Text>
+            
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={confirmSignOut}
+            >
+              <Ionicons name="log-out-outline" size={22} color="#ff6b6b" style={styles.menuIcon} />
+              <Text style={[styles.menuText, styles.signOutText]}>Sign Out</Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          <TouchableOpacity style={styles.editButton} onPress={() => setEditMode(true)}>
-            <Ionicons name="create-outline" size={24} color="white" />
+        </TouchableOpacity>
+      </Modal>
+      
+      <ScrollView 
+        style={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#1DB954"]}
+            tintColor={"#1DB954"}
+          />
+        }>
+        <View style={styles.topBar}>
+          {/* Stats Icon */}
+          <TouchableOpacity style={styles.statsButton} onPress={() => navigation.navigate("Stats")}>
+            <Ionicons name="stats-chart-outline" size={24} color="white" />
           </TouchableOpacity>
-        )}
-      </View>
+          
+          {/* Edit/Save Button */}
+          {editMode ? (
+            <View style={styles.editButtonsContainer}>
+              <TouchableOpacity style={styles.cancelButton} onPress={cancelEdit}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
+              <Ionicons name="ellipsis-vertical" size={24} color="white" />
+            </TouchableOpacity>
+          )}
+        </View>
       
       <View style={styles.usernameContainer}>
         <Text style={styles.usernameText}>
@@ -341,7 +448,7 @@ export default function Profile({ navigation: propNavigation }) {
               source={
                 profilePicUrl
                   ? { uri: profilePicUrl }
-                  : require("../assets/riley.png")
+                  : { uri: "https://via.placeholder.com/120?text=Profile" }
               }
               style={styles.profilePic}
             />
@@ -395,6 +502,7 @@ export default function Profile({ navigation: propNavigation }) {
         <Text style={styles.userBio}>{bio}</Text>
       )}
 
+      {/* Favorite Albums Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Favorite Albums</Text>
@@ -407,9 +515,14 @@ export default function Profile({ navigation: propNavigation }) {
             <Ionicons name="add-circle" size={24} color="#1DB954" />
           </TouchableOpacity>
         </View>
-        {renderHorizontalList(savedAlbums)}
+        {savedAlbums.length > 0 ? (
+          renderHorizontalList(savedAlbums)
+        ) : (
+          <Text style={styles.emptyListText}>No favorite albums yet</Text>
+        )}
       </View>
 
+      {/* Favorite Songs Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Favorite Songs</Text>
@@ -422,19 +535,44 @@ export default function Profile({ navigation: propNavigation }) {
             <Ionicons name="add-circle" size={24} color="#1DB954" />
           </TouchableOpacity>
         </View>
-        {renderHorizontalList(savedTracks)}
+        {savedTracks.length > 0 ? (
+          renderHorizontalList(savedTracks)
+        ) : (
+          <Text style={styles.emptyListText}>No favorite songs yet</Text>
+        )}
       </View>
+      
+      {/* My List Section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>My List</Text>
+          {savedItems.length > 0 && (
+            <TouchableOpacity
+              style={styles.viewMoreButton}
+              onPress={() => navigation.navigate('AllSavedItems', { items: savedItems.map(item => ({ ...item })) })}
+            >
+              <Text style={styles.viewMoreText}>View All</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
+        {savedItems.length > 0 ? (
+          renderHorizontalList(savedItems.slice(0, 10).reverse())
+        ) : (
+          <Text style={styles.emptyListText}>No saved items yet</Text>
+        )}
+      </View>
+      
       {/* My Reviews Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My Reviews</Text>
-          {userReviews.length > 3 && (
+          {userReviews.length > 0 && (
             <TouchableOpacity
               style={styles.viewMoreButton}
               onPress={() => navigation.navigate('AllReviews', { reviews: userReviews })}
             >
-              <Text style={styles.viewMoreText}>View More</Text>
+              <Text style={styles.viewMoreText}>View All</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -505,6 +643,7 @@ export default function Profile({ navigation: propNavigation }) {
         )}
       </View>
     </ScrollView>
+    </>
   );
 }
 
@@ -813,5 +952,43 @@ const styles = StyleSheet.create({
     color: "#1DB954",
     fontSize: 12,
     fontWeight: "bold",
+  },
+  // Menu modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingRight: 20,
+    paddingTop: 100, // Position it below the top bar
+  },
+  menuContainer: {
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+    width: 180,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  menuIcon: {
+    marginRight: 12,
+  },
+  menuText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  signOutText: {
+    color: '#ff6b6b',
+  },
+  menuButton: {
+    padding: 8,
   },
 });

@@ -40,21 +40,26 @@ export default function LeaveReview({ route, navigation }) {
   };
 
   const handleFilterChange = (filter) => {
-    setActiveFilter(filter);
-    
-    // Update search type based on filter
-    switch(filter) {
-      case 'songs':
-        setSearchType('track');
-        break;
-      case 'albums':
-        setSearchType('album');
-        break;
-      case 'artists':
-        setSearchType('artist');
-        break;
-      default:
-        setSearchType('track,album,artist');
+    // Toggle filter selection
+    if (filter === activeFilter) {
+      // If the current filter is clicked again, deselect it
+      setActiveFilter(null);
+      setSearchType('track,album'); // Search both when no filter is selected
+    } else {
+      // Select the new filter
+      setActiveFilter(filter);
+      
+      // Update search type based on filter
+      switch(filter) {
+        case 'songs':
+          setSearchType('track');
+          break;
+        case 'albums':
+          setSearchType('album');
+          break;
+        default:
+          setSearchType('track,album'); // Default to both
+      }
     }
     
     // If there's a search query, perform search with new filter
@@ -72,6 +77,7 @@ export default function LeaveReview({ route, navigation }) {
       
       let formattedResults = [];
       
+      // For tracks/songs
       if (results.tracks && results.tracks.items && (activeFilter === 'all' || activeFilter === 'songs')) {
         const trackResults = results.tracks.items.map(track => ({
           id: track.id,
@@ -85,6 +91,7 @@ export default function LeaveReview({ route, navigation }) {
         formattedResults = [...formattedResults, ...trackResults];
       }
       
+      // For albums
       if (results.albums && results.albums.items && (activeFilter === 'all' || activeFilter === 'albums')) {
         const albumResults = results.albums.items.map(album => ({
           id: album.id,
@@ -98,6 +105,7 @@ export default function LeaveReview({ route, navigation }) {
         formattedResults = [...formattedResults, ...albumResults];
       }
       
+      // For artists
       if (results.artists && results.artists.items && (activeFilter === 'all' || activeFilter === 'artists')) {
         const artistResults = results.artists.items.map(artist => ({
           id: artist.id,
@@ -110,6 +118,18 @@ export default function LeaveReview({ route, navigation }) {
         }));
         formattedResults = [...formattedResults, ...artistResults];
       }
+      
+      // Sort results to prioritize exact type matches
+      formattedResults.sort((a, b) => {
+        // If we're filtering for a specific type, prioritize that type
+        if (activeFilter === 'songs' && a.type === 'track') return -1;
+        if (activeFilter === 'songs' && b.type === 'track') return 1;
+        if (activeFilter === 'albums' && a.type === 'album') return -1;
+        if (activeFilter === 'albums' && b.type === 'album') return 1;
+        if (activeFilter === 'artists' && a.type === 'artist') return -1;
+        if (activeFilter === 'artists' && b.type === 'artist') return 1;
+        return 0;
+      });
       
       setSearchResults(formattedResults);
     } catch (error) {

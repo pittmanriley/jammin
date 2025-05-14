@@ -146,12 +146,13 @@ export default function Feed({ navigation }) {
           <TouchableOpacity
             onPress={() => {
               // Navigate to AlbumScreen for albums, Info for tracks
-              if (item.type === 'album') {
+              if (item.type === "album") {
                 navigation.navigate("AlbumScreen", {
                   id: item.id,
                   title: item.title,
                   artist: item.artist,
-                  imageUri: item.imageUri || (item.image && { uri: item.image }),
+                  imageUri:
+                    item.imageUri || (item.image && { uri: item.image }),
                   spotifyUri: item.spotifyUri,
                 });
               } else {
@@ -159,7 +160,8 @@ export default function Feed({ navigation }) {
                   id: item.id,
                   title: item.title,
                   artist: item.artist,
-                  imageUri: item.imageUri || (item.image && { uri: item.image }),
+                  imageUri:
+                    item.imageUri || (item.image && { uri: item.image }),
                   type: item.type,
                   spotifyUri: item.spotifyUri,
                 });
@@ -217,29 +219,29 @@ export default function Feed({ navigation }) {
           <>
             {/* Popular Albums Section */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Popular albums</Text>
-              {popularAlbums.length > 10 && (
-                <TouchableOpacity
-                  style={styles.viewMoreButton}
-                  onPress={() => navigation.navigate('AllAlbums', { albums: popularAlbums })}
-                >
-                  <Text style={styles.viewMoreText}>View More</Text>
-                </TouchableOpacity>
-              )}
+              <Text style={styles.sectionTitle}>Popular Albums</Text>
+              <TouchableOpacity
+                style={styles.viewMoreButton}
+                onPress={() =>
+                  navigation.navigate("AllAlbums", { albums: popularAlbums })
+                }
+              >
+                <Text style={styles.viewMoreText}>View More</Text>
+              </TouchableOpacity>
             </View>
             {renderHorizontalList(popularAlbums.slice(0, 10))}
 
             {/* Popular Songs Section */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Popular songs</Text>
-              {popularTracks.length > 10 && (
-                <TouchableOpacity
-                  style={styles.viewMoreButton}
-                  onPress={() => navigation.navigate('AllSongs', { songs: popularTracks })}
-                >
-                  <Text style={styles.viewMoreText}>View More</Text>
-                </TouchableOpacity>
-              )}
+              <Text style={styles.sectionTitle}>Popular Songs</Text>
+              <TouchableOpacity
+                style={styles.viewMoreButton}
+                onPress={() =>
+                  navigation.navigate("AllSongs", { songs: popularTracks })
+                }
+              >
+                <Text style={styles.viewMoreText}>View More</Text>
+              </TouchableOpacity>
             </View>
             {renderHorizontalList(popularTracks.slice(0, 10))}
 
@@ -249,7 +251,9 @@ export default function Feed({ navigation }) {
               {userReviews.length > 5 && (
                 <TouchableOpacity
                   style={styles.viewMoreButton}
-                  onPress={() => navigation.navigate('AllReviews', { reviews: userReviews })}
+                  onPress={() =>
+                    navigation.navigate("AllReviews", { reviews: userReviews })
+                  }
                 >
                   <Text style={styles.viewMoreText}>View More</Text>
                 </TouchableOpacity>
@@ -350,9 +354,21 @@ export default function Feed({ navigation }) {
               <Text style={styles.emptyListText}>No reviews yet</Text>
             )}
 
-            {/* Friends' Songs Section */}
-            <Text style={styles.sectionTitle}>Friends' activity</Text>
-            {renderHorizontalList(friendActivity)}
+            {/* Friends' Activity Section */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Friends' Activity</Text>
+              {friendActivity.length > 10 && (
+                <TouchableOpacity
+                  style={styles.viewMoreButton}
+                  onPress={() =>
+                    navigation.navigate("AllActivity", { activity: friendActivity })
+                  }
+                >
+                  <Text style={styles.viewMoreText}>View More</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {renderHorizontalList(friendActivity.slice(0, 10))}
           </>
         )}
       </ScrollView>
@@ -440,18 +456,18 @@ const styles = StyleSheet.create({
     width: imageSize - 10,
   },
   typeIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: 5,
     right: 5,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: "rgba(0,0,0,0.7)",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
   },
   typeText: {
-    color: '#1DB954',
+    color: "#1DB954",
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   reviewCard: {
     width: 160,

@@ -12,7 +12,7 @@ import { collection, query, getDocs, limit, orderBy } from "firebase/firestore";
  * @param {number} limit - Number of albums to return
  * @returns {Promise<Array>} - Array of album objects
  */
-export const getPopularAlbums = async (itemLimit = 10) => {
+export const getPopularAlbums = async (itemLimit = 50) => {
   try {
     const connected = await isSpotifyConnected();
 
@@ -42,7 +42,7 @@ export const getPopularAlbums = async (itemLimit = 10) => {
  * @param {number} limit - Number of tracks to return
  * @returns {Promise<Array>} - Array of track objects
  */
-export const getPopularTracks = async (itemLimit = 10) => {
+export const getPopularTracks = async (itemLimit = 50) => {
   try {
     const connected = await isSpotifyConnected();
 
@@ -94,25 +94,18 @@ export const getFeaturedContent = async (itemLimit = 10) => {
 
     if (connected) {
       try {
-        // Get featured playlists from Spotify
-        const featured = await getFeaturedPlaylists(itemLimit);
-        
-        // Check if the response has the expected structure
-        if (featured && featured.playlists && featured.playlists.items) {
-          return featured.playlists.items.map((playlist) => ({
-            id: playlist.id,
-            title: playlist.name,
-            artist: playlist.owner.display_name,
-            imageUri: playlist.images[0].url,
-            type: "playlist",
-            spotifyUri: playlist.uri,
-          }));
-        } else {
-          console.log('Unexpected featured playlists response structure:', featured);
-          return getDummyFeatured();
-        }
+        // Try to get new releases instead of featured playlists which are causing errors
+        const newReleases = await getNewReleases(itemLimit);
+        return newReleases.albums.items.map((album) => ({
+          id: album.id,
+          title: album.name,
+          artist: album.artists[0].name,
+          imageUri: album.images[0].url,
+          type: "album",
+          spotifyUri: album.uri,
+        }));
       } catch (spotifyError) {
-        console.error('Spotify API error when getting featured playlists:', spotifyError);
+        console.error('Spotify API error when getting featured content:', spotifyError);
         return getDummyFeatured();
       }
     } else {

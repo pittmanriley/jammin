@@ -8,10 +8,11 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../firebaseConfig";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc, setDoc } from "firebase/firestore";
 import { getTrackDetails, getArtist } from "../services/spotifyService";
 import { useRoute } from "@react-navigation/native";
 
@@ -21,11 +22,118 @@ export default function InfoScreen({ route, navigation }) {
   const [userReview, setUserReview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [genres, setGenres] = useState([]);
+  const [isSaved, setIsSaved] = useState(false);
+  const [savingItem, setSavingItem] = useState(false);
   
   useEffect(() => {
     fetchUserReview();
     fetchTrackDetails();
+    checkIfItemIsSaved();
   }, []);
+  
+  const checkIfItemIsSaved = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.savedItems && Array.isArray(userData.savedItems)) {
+          const isItemSaved = userData.savedItems.some(item => item.id === id);
+          setIsSaved(isItemSaved);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking if item is saved:', error);
+    }
+  };
+  
+  const handleSaveItem = async () => {
+    try {
+      setSavingItem(true);
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert('Error', 'You need to be logged in to save items');
+        return;
+      }
+      
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      const itemData = {
+        id,
+        title,
+        artist,
+        imageUri,
+        type,
+        spotifyUri,
+        savedAt: new Date().toISOString()
+      };
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        let updatedSavedItems = [];
+        
+        if (userData.savedItems && Array.isArray(userData.savedItems)) {
+          // Check if item is already saved
+          const existingIndex = userData.savedItems.findIndex(item => item.id === id);
+          
+          if (existingIndex >= 0) {
+            // Item exists, remove it
+            updatedSavedItems = [...userData.savedItems];
+            updatedSavedItems.splice(existingIndex, 1);
+            setIsSaved(false);
+          } else {
+            // Item doesn't exist, add it
+            updatedSavedItems = [...userData.savedItems, itemData];
+            setIsSaved(true);
+          }
+        } else {
+          // No saved items array yet, create it
+          updatedSavedItems = [itemData];
+          setIsSaved(true);
+        }
+        
+        // Update the document
+        await updateDoc(userRef, {
+          savedItems: updatedSavedItems
+        });
+      } else {
+        // Create user document if it doesn't exist
+        await setDoc(userRef, {
+          email: user.email,
+          displayName: user.displayName || 'User',
+          savedItems: [itemData],
+          createdAt: new Date().toISOString()
+        });
+        setIsSaved(true);
+      }
+    } catch (error) {
+      console.error('Error saving item:', error);
+      Alert.alert('Error', 'Failed to save item. Please try again.');
+    } finally {
+      setSavingItem(false);
+    }
+  };
+  
+  const openInSpotify = () => {
+    if (spotifyUri) {
+      Linking.canOpenURL(spotifyUri).then(supported => {
+        if (supported) {
+          Linking.openURL(spotifyUri);
+        } else {
+          // If Spotify app is not installed, open in web browser
+          const webUrl = spotifyUri.replace('spotify:', 'https://open.spotify.com/');
+          Linking.openURL(webUrl);
+        }
+      });
+    } else {
+      Alert.alert('Error', 'Spotify link not available for this item');
+    }
+  };
   
   const fetchTrackDetails = async () => {
     try {
@@ -116,8 +224,8 @@ export default function InfoScreen({ route, navigation }) {
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Song Info</Text>
-        <TouchableOpacity onPress={() => console.log("yes")}>
-          <Ionicons name="add" size={28} color="white" />
+        <TouchableOpacity onPress={openInSpotify}>
+          <Ionicons name="play-circle-outline" size={28} color="#1DB954" />
         </TouchableOpacity>
       </View>
 
@@ -222,9 +330,19 @@ export default function InfoScreen({ route, navigation }) {
             <Text style={styles.buttonText}>{userReview ? 'Edit Review' : 'Leave Review'}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button}>
-            <Ionicons name="heart-outline" size={20} color="white" />
-            <Text style={styles.buttonText}>Save</Text>
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={handleSaveItem}
+            disabled={savingItem}
+          >
+            <Ionicons 
+              name={isSaved ? "heart" : "heart-outline"} 
+              size={20} 
+              color={isSaved ? "#1DB954" : "white"} 
+            />
+            <Text style={[styles.buttonText, isSaved && styles.savedButtonText]}>
+              {savingItem ? "Saving..." : (isSaved ? "Saved" : "Save")}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.button}>
@@ -429,5 +547,8 @@ const styles = StyleSheet.create({
     color: "white",
     marginLeft: 5,
     fontSize: 12,
+  },
+  savedButtonText: {
+    color: "#1DB954",
   },
 });

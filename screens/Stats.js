@@ -56,7 +56,7 @@ export default function Stats({ navigation }) {
         });
       }
     } catch (err) {
-      console.error("Error loading stats:", err);
+      console.error(`Error loading stats: ${err.message}`);
       setError("Failed to load your listening stats. Please try again.");
       // Fallback to mock data on error
       setListeningStats({
@@ -95,13 +95,14 @@ export default function Stats({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons
-          name="arrow-back"
-          size={28}
-          color="white"
+        <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
-        />
+        >
+          <Text style={{height: 28}}>
+            <Ionicons name="arrow-back" size={28} color="white" />
+          </Text>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Listening Stats</Text>
         <View style={{ width: 28 }} /> {/* Empty view for spacing */}
       </View>
@@ -176,7 +177,9 @@ export default function Stats({ navigation }) {
         {/* Total Listening Time */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Ionicons name="time-outline" size={32} color="#1DB954" />
+            <Text style={{height: 32}}>
+              <Ionicons name="time-outline" size={32} color="#1DB954" />
+            </Text>
           </View>
           <View style={styles.statContent}>
             <Text style={styles.statTitle}>Total Listening Time</Text>
@@ -184,7 +187,9 @@ export default function Stats({ navigation }) {
               {formatMinutes(listeningStats.minutesListened)}
             </Text>
             <Text style={styles.statSubtext}>
-              {`That's about ${Math.round(listeningStats.minutesListened / 60)} hours of music!`}
+              {`That's about ${Math.round(
+                listeningStats.minutesListened / 60 / 24
+              )} day(s) of music!`}
             </Text>
           </View>
         </View>
@@ -192,7 +197,9 @@ export default function Stats({ navigation }) {
         {/* Artists Discovered */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Ionicons name="people-outline" size={32} color="#1DB954" />
+            <Text style={{height: 32}}>
+              <Ionicons name="people-outline" size={32} color="#1DB954" />
+            </Text>
           </View>
           <View style={styles.statContent}>
             <Text style={styles.statTitle}>Artists Discovered</Text>
@@ -208,7 +215,9 @@ export default function Stats({ navigation }) {
         {/* Songs Played */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Ionicons name="musical-notes-outline" size={32} color="#1DB954" />
+            <Text style={{height: 32}}>
+              <Ionicons name="musical-notes-outline" size={32} color="#1DB954" />
+            </Text>
           </View>
           <View style={styles.statContent}>
             <Text style={styles.statTitle}>Songs Played</Text>
@@ -220,7 +229,9 @@ export default function Stats({ navigation }) {
         {/* Top Genres */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Ionicons name="albums-outline" size={32} color="#1DB954" />
+            <Text style={{height: 32}}>
+              <Ionicons name="albums-outline" size={32} color="#1DB954" />
+            </Text>
           </View>
           <View style={styles.statContent}>
             <Text style={styles.statTitle}>Top Genres</Text>
@@ -237,7 +248,9 @@ export default function Stats({ navigation }) {
         {/* Daily Average */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Ionicons name="calendar-outline" size={32} color="#1DB954" />
+            <Text style={{height: 32}}>
+              <Ionicons name="calendar-outline" size={32} color="#1DB954" />
+            </Text>
           </View>
           <View style={styles.statContent}>
             <Text style={styles.statTitle}>Daily Average</Text>
@@ -253,12 +266,14 @@ export default function Stats({ navigation }) {
         {/* Longest Streak */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Ionicons name="flame-outline" size={32} color="#1DB954" />
+            <Text style={{height: 32}}>
+              <Ionicons name="flame-outline" size={32} color="#1DB954" />
+            </Text>
           </View>
           <View style={styles.statContent}>
             <Text style={styles.statTitle}>Longest Listening Streak</Text>
             <Text style={styles.statValue}>
-              {listeningStats.longestListeningStreak} days
+              {`${listeningStats.longestListeningStreak} days`}
             </Text>
             <Text style={styles.statSubtext}>
               You're committed to your music!

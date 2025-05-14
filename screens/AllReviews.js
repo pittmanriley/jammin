@@ -117,6 +117,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: colors.text.primary,
+    textAlign: "center",
+    flex: 1,
   },
   content: {
     flex: 1,

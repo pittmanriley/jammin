@@ -236,12 +236,20 @@ export default function NewPost({ navigation }) {
             // If turning on songs, turn off albums
             const newFilters = {
               songs: newSongsFilter,
-              albums: newSongsFilter ? false : selectedFilters.albums
+              albums: false // Always turn off albums when toggling songs
             };
             setSelectedFilters(newFilters);
             
             // Update displayed results immediately
-            setTimeout(() => updateDisplayedResults(), 10);
+            setTimeout(() => {
+              // If songs filter is active, show only songs
+              if (newFilters.songs) {
+                setSearchResults([...allResults.tracks]);
+              } else {
+                // If no filters are active, show both
+                setSearchResults([...allResults.tracks, ...allResults.albums]);
+              }
+            }, 10);
           }}
         >
           <Text style={[
@@ -263,13 +271,21 @@ export default function NewPost({ navigation }) {
             
             // If turning on albums, turn off songs
             const newFilters = {
-              songs: newAlbumsFilter ? false : selectedFilters.songs,
+              songs: false, // Always turn off songs when toggling albums
               albums: newAlbumsFilter
             };
             setSelectedFilters(newFilters);
             
             // Update displayed results immediately
-            setTimeout(() => updateDisplayedResults(), 10);
+            setTimeout(() => {
+              // If albums filter is active, show only albums
+              if (newFilters.albums) {
+                setSearchResults([...allResults.albums]);
+              } else {
+                // If no filters are active, show both
+                setSearchResults([...allResults.tracks, ...allResults.albums]);
+              }
+            }, 10);
           }}
         >
           <Text style={[

@@ -19,6 +19,7 @@ import Stats from "../screens/Stats";
 import AllAlbums from "../screens/AllAlbums";
 import AllSongs from "../screens/AllSongs";
 import AllReviews from "../screens/AllReviews";
+import AllSavedItems from "../screens/AllSavedItems";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -122,6 +123,11 @@ export default function RootNavigator() {
         <Stack.Screen
           name="AllReviews"
           component={AllReviews}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AllSavedItems"
+          component={AllSavedItems}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

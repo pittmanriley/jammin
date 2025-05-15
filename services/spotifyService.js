@@ -12,18 +12,47 @@ const TOKEN_EXPIRY_KEY = "spotify_token_expiry";
 const SPOTIFY_API_BASE = "https://api.spotify.com/v1";
 
 /**
+ * Generate a random string of specified length
+ * @param {number} length - Length of the string to generate
+ * @returns {string} Random string
+ */
+const generateRandomString = (length) => {
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let text = '';
+  for (let i = 0; i < length; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+};
+
+/**
  * Get the authorization URL for Spotify OAuth
+ * @returns {string} Authorization URL
  */
 export const getAuthorizationUrl = () => {
+  // Always use the consistent redirect URI from spotifyConfig
+  const redirectUri = spotifyConfig.redirectUri;
+  
+  // Join the scopes with a space
   const scopes = spotifyConfig.scopes.join(" ");
+  
+  // Generate a state parameter for security
+  const state = generateRandomString(16);
+  
+  // Store the state for later verification
+  SecureStore.setItemAsync('spotify_auth_state', state);
+  
+  // Build the authorization URL
   const params = new URLSearchParams({
     client_id: spotifyConfig.clientId,
     response_type: "code",
-    redirect_uri: spotifyConfig.redirectUri,
+    redirect_uri: redirectUri,
     scope: scopes,
+    state: state,
     show_dialog: "true",
   });
 
+  console.log(`Using redirect URI for authorization: ${redirectUri}`);
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
 };
 
@@ -33,33 +62,63 @@ export const getAuthorizationUrl = () => {
  */
 export const exchangeCodeForToken = async (code) => {
   try {
-    const params = new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: spotifyConfig.redirectUri,
-      client_id: spotifyConfig.clientId,
-      client_secret: spotifyConfig.clientSecret,
-    });
+    console.log(`Starting token exchange with code length: ${code.length}`);
+    
+    // Try each redirect URI in order until one works
+    // This helps handle cases where the authorization happened with a different URI
+    const redirectUris = [spotifyConfig.redirectUri, ...spotifyConfig.redirectUris];
+    let success = false;
+    let lastError = null;
+    let data = null;
+    
+    for (const redirectUri of redirectUris) {
+      try {
+        console.log(`Trying token exchange with redirect URI: ${redirectUri}`);
+        
+        // Prepare the request parameters
+        const params = new URLSearchParams({
+          grant_type: "authorization_code",
+          code,
+          redirect_uri: redirectUri,
+          client_id: spotifyConfig.clientId,
+          client_secret: spotifyConfig.clientSecret,
+        });
 
-    const response = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      await storeTokens(data);
-      await saveUserSpotifyConnection(data);
-      return data;
-    } else {
-      throw new Error(
-        data.error_description || "Failed to exchange code for token"
-      );
+        // Make the token exchange request
+        const response = await fetch("https://accounts.spotify.com/api/token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: params.toString(),
+        });
+        
+        console.log(`Token exchange response status with ${redirectUri}: ${response.status}`);
+        
+        if (response.ok) {
+          data = await response.json();
+          success = true;
+          console.log('Token exchange successful!');
+          break; // Exit the loop if successful
+        } else {
+          const errorText = await response.text();
+          console.log(`Token exchange failed with ${redirectUri}: ${errorText}`);
+          lastError = new Error(`Token exchange failed with status ${response.status}: ${errorText}`);
+        }
+      } catch (error) {
+        console.log(`Error trying ${redirectUri}: ${error.message}`);
+        lastError = error;
+      }
     }
+    
+    if (!success) {
+      throw lastError || new Error('Failed to exchange code for token with all redirect URIs');
+    }
+
+    // Store the tokens and save user connection data
+    await storeTokens(data);
+    await saveUserSpotifyConnection(data);
+    return data;
   } catch (error) {
     console.error("Error exchanging code for token:", error);
     throw error;

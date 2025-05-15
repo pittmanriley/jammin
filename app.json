@@ -7,14 +7,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "scheme": "exp",
+    "scheme": "jammin",
+    "owner": "pittmanriley",
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "tsconfigPaths": true
     },
-
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",

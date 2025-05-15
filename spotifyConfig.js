@@ -1,8 +1,24 @@
-// Spotify API configuration
+/**
+ * Spotify API configuration
+ * This file contains all the settings needed for Spotify authentication
+ */
 export const spotifyConfig = {
-  clientId: "21d17026bbe0430697c7be4554663b36", // Replace with your Spotify Client ID
-  clientSecret: "f4e7492097e94320a8727f0720ca5ad7", // Replace with your Spotify Client Secret
-  redirectUri: "exp://192.168.4.91:8082", // This will be used in the OAuth flow
+  // Your Spotify application credentials
+  clientId: "21d17026bbe0430697c7be4554663b36",
+  
+  // Authentication endpoints
+  discovery: {
+    authorizationEndpoint: "https://accounts.spotify.com/authorize",
+    tokenEndpoint: "https://accounts.spotify.com/api/token",
+  },
+  
+  // Proxy settings for expo-auth-session
+  // This allows proper redirect handling during development
+  useProxy: true,
+  
+  // Spotify API base URL
+  apiBaseUrl: "https://api.spotify.com/v1",
+
   scopes: [
     "user-read-private",
     "user-read-email",
@@ -14,12 +30,23 @@ export const spotifyConfig = {
     "user-read-currently-playing",
     "user-read-playback-state",
   ],
-  // Add any additional configuration as needed
 };
 
-// Instructions for setting up Spotify Developer account:
+// IMPORTANT SETUP INSTRUCTIONS FOR SPOTIFY DEVELOPER DASHBOARD:
 // 1. Go to https://developer.spotify.com/dashboard
-// 2. Log in with your Spotify account
-// 3. Create a new app
-// 4. Set the redirect URI to 'jammin://auth/callback' in the app settings
-// 5. Copy the Client ID and Client Secret to this file
+// 2. Log in with your Spotify account and select your app
+// 3. Click "Edit Settings"
+// 4. Add ALL of these Redirect URIs:
+//    - exp://localhost:19000
+//    - exp://127.0.0.1:19000
+//    - exp://192.168.1.X:19000 (replace X with your local IP address)
+//    - jammin://
+//    - https://auth.expo.io/@pittmanriley/jammin
+// 5. Save changes
+//
+// SETUP INSTRUCTIONS FOR YOUR FRIENDS:
+// 1. They need a Spotify account
+// 2. You need to add their Spotify email addresses as users in your Spotify Dashboard
+//    (Go to your app in the dashboard -> Users and Access -> Add New User)
+// 3. They need to clone your repository and run it with Expo Go
+// 4. No need to change any code - the authentication will work automatically

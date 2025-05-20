@@ -32,7 +32,9 @@ export default function SpotifyAuth() {
 
   // Generate a redirect URI using expo-auth-session's helper
   const redirectUri = makeRedirectUri({
-    useProxy: true,
+    // useProxy: true,
+    scheme: "jammin",
+    path: "redirect",
   });
 
   console.log("Generated redirect URI:", redirectUri);

@@ -59,7 +59,10 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "spotifyClientId": "21d17026bbe0430697c7be4554663b36"
+      "spotifyClientId": "21d17026bbe0430697c7be4554663b36",
+      "eas": {
+        "projectId": "6cd3d7f6-401e-457d-a445-9e03e988aefe"
+      }
     }
   }
 }

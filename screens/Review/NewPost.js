@@ -13,7 +13,11 @@ import {
   Alert,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { searchSpotify, isSpotifyConnected } from "../../services/spotifyService";
+import {
+  searchSpotify,
+  isSpotifyConnected,
+} from "../../services/spotifyService";
+import { theme } from "../../theme/theme";
 
 export default function NewPost({ navigation }) {
   const [query, setQuery] = useState("");
@@ -23,13 +27,13 @@ export default function NewPost({ navigation }) {
   // Remove searchType as we're not using it anymore
   const [selectedFilters, setSelectedFilters] = useState({
     songs: false,
-    albums: false
+    albums: false,
   });
-  
+
   // Add a state to track all fetched results
   const [allResults, setAllResults] = useState({
     tracks: [],
-    albums: []
+    albums: [],
   });
 
   useEffect(() => {
@@ -50,39 +54,39 @@ export default function NewPost({ navigation }) {
     try {
       setLoading(true);
       // Always search for both types to get all results
-      const results = await searchSpotify(query, 'track,album', 20);
-      
+      const results = await searchSpotify(query, "track,album", 20);
+
       // Process and store all results
       let tracks = [];
       let albums = [];
-      
+
       if (results.tracks && results.tracks.items) {
-        tracks = results.tracks.items.map(track => ({
+        tracks = results.tracks.items.map((track) => ({
           id: track.id,
           name: track.name,
           artist: track.artists.map((a) => a.name).join(", "),
           album: track.album.name,
           imageUri: track.album.images[0]?.url,
           spotifyUri: track.uri,
-          type: 'track',
+          type: "track",
         }));
       }
-      
+
       if (results.albums && results.albums.items) {
-        albums = results.albums.items.map(album => ({
+        albums = results.albums.items.map((album) => ({
           id: album.id,
           name: album.name,
           artist: album.artists.map((a) => a.name).join(", "),
           album: null,
           imageUri: album.images[0]?.url,
           spotifyUri: album.uri,
-          type: 'album',
+          type: "album",
         }));
       }
-      
+
       // Store all results
       setAllResults({ tracks, albums });
-      
+
       // Apply filters to determine what to display
       updateDisplayedResults();
     } catch (error) {
@@ -93,11 +97,11 @@ export default function NewPost({ navigation }) {
       setLoading(false);
     }
   };
-  
+
   // Separate function to update displayed results based on filters
   const updateDisplayedResults = () => {
     let formattedResults = [];
-    
+
     // If songs filter is active, show only songs
     if (selectedFilters.songs) {
       formattedResults = [...allResults.tracks];
@@ -110,7 +114,7 @@ export default function NewPost({ navigation }) {
     else {
       formattedResults = [...allResults.tracks, ...allResults.albums];
     }
-    
+
     setSearchResults(formattedResults);
   };
 
@@ -120,7 +124,8 @@ export default function NewPost({ navigation }) {
         <View style={styles.spotifyConnectContainer}>
           <Text style={styles.spotifyConnectTitle}>Connect to Spotify</Text>
           <Text style={styles.spotifyConnectText}>
-            You need to connect your Spotify account to search for songs and albums.
+            You need to connect your Spotify account to search for songs and
+            albums.
           </Text>
           <TouchableOpacity
             style={styles.connectButton}
@@ -135,7 +140,7 @@ export default function NewPost({ navigation }) {
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1DB954" />
+          <ActivityIndicator size="large" color={theme.button.primary} />
           <Text style={styles.loadingText}>Searching...</Text>
         </View>
       );
@@ -157,13 +162,13 @@ export default function NewPost({ navigation }) {
           <TouchableOpacity
             style={styles.resultCard}
             onPress={() => {
-              if (item.type === 'album') {
+              if (item.type === "album") {
                 navigation.navigate("AlbumScreen", {
                   id: item.id,
                   title: item.name,
                   artist: item.artist,
                   imageUri: item.imageUri,
-                  spotifyUri: item.spotifyUri
+                  spotifyUri: item.spotifyUri,
                 });
               } else {
                 navigation.navigate("Info", {
@@ -172,7 +177,7 @@ export default function NewPost({ navigation }) {
                   artist: item.artist,
                   imageUri: item.imageUri,
                   type: item.type,
-                  spotifyUri: item.spotifyUri
+                  spotifyUri: item.spotifyUri,
                 });
               }
             }}
@@ -184,7 +189,11 @@ export default function NewPost({ navigation }) {
               />
             ) : (
               <View style={styles.placeholderImage}>
-                <Ionicons name="musical-note" size={24} color="#666" />
+                <Ionicons
+                  name="musical-note"
+                  size={24}
+                  color={theme.text.secondary}
+                />
               </View>
             )}
             <View style={styles.resultTextContainer}>
@@ -192,7 +201,7 @@ export default function NewPost({ navigation }) {
               <Text style={styles.artist}>{item.artist}</Text>
               {item.album && <Text style={styles.albumName}>{item.album}</Text>}
               <Text style={styles.itemType}>
-                {item.type === 'track' ? 'Song' : 'Album'}
+                {item.type === "track" ? "Song" : "Album"}
               </Text>
             </View>
           </TouchableOpacity>
@@ -204,102 +213,89 @@ export default function NewPost({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>New Review</Text>
-      
+
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.input}
           placeholder="Search for songs or albums"
-          placeholderTextColor="#aaa"
+          placeholderTextColor={theme.text.secondary}
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
         />
-        <TouchableOpacity 
-          style={styles.searchButton}
-          onPress={handleSearch}
-        >
-          <Ionicons name="search" size={24} color="white" />
+        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+          <Ionicons name="search" size={24} color={theme.text.primary} />
         </TouchableOpacity>
       </View>
-      
+
       <View style={styles.filterContainer}>
         <TouchableOpacity
           style={[
             styles.filterButton,
-            selectedFilters.songs && styles.filterButtonActive
+            selectedFilters.songs && styles.filterButtonActive,
           ]}
           onPress={() => {
-            // Toggle songs filter
             const newSongsFilter = !selectedFilters.songs;
-            
-            // If turning on songs, turn off albums
             const newFilters = {
               songs: newSongsFilter,
-              albums: false // Always turn off albums when toggling songs
+              albums: false,
             };
             setSelectedFilters(newFilters);
-            
-            // Update displayed results immediately
+
             setTimeout(() => {
-              // If songs filter is active, show only songs
               if (newFilters.songs) {
                 setSearchResults([...allResults.tracks]);
               } else {
-                // If no filters are active, show both
                 setSearchResults([...allResults.tracks, ...allResults.albums]);
               }
             }, 10);
           }}
         >
-          <Text style={[
-            styles.filterButtonText,
-            selectedFilters.songs && styles.filterButtonTextActive
-          ]}>
+          <Text
+            style={[
+              styles.filterButtonText,
+              selectedFilters.songs && styles.filterButtonTextActive,
+            ]}
+          >
             Songs
           </Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[
             styles.filterButton,
-            selectedFilters.albums && styles.filterButtonActive
+            selectedFilters.albums && styles.filterButtonActive,
           ]}
           onPress={() => {
-            // Toggle albums filter
             const newAlbumsFilter = !selectedFilters.albums;
-            
-            // If turning on albums, turn off songs
             const newFilters = {
-              songs: false, // Always turn off songs when toggling albums
-              albums: newAlbumsFilter
+              songs: false,
+              albums: newAlbumsFilter,
             };
             setSelectedFilters(newFilters);
-            
-            // Update displayed results immediately
+
             setTimeout(() => {
-              // If albums filter is active, show only albums
               if (newFilters.albums) {
                 setSearchResults([...allResults.albums]);
               } else {
-                // If no filters are active, show both
                 setSearchResults([...allResults.tracks, ...allResults.albums]);
               }
             }, 10);
           }}
         >
-          <Text style={[
-            styles.filterButtonText,
-            selectedFilters.albums && styles.filterButtonTextActive
-          ]}>
+          <Text
+            style={[
+              styles.filterButtonText,
+              selectedFilters.albums && styles.filterButtonTextActive,
+            ]}
+          >
             Albums
           </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.resultsContainer}>
-        {renderSearchResults()}
-      </View>
+      <View style={styles.resultsContainer}>{renderSearchResults()}</View>
     </View>
   );
 }
@@ -307,14 +303,14 @@ export default function NewPost({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
     paddingTop: 50,
     paddingHorizontal: 20,
   },
   header: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
     marginTop: 10,
     marginBottom: 20,
     textAlign: "center",
@@ -326,15 +322,15 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: "#1e1e1e",
+    backgroundColor: theme.background.secondary,
     borderRadius: 10,
     padding: 15,
-    color: "white",
+    color: theme.text.primary,
     fontSize: 16,
     marginRight: 10,
   },
   searchButton: {
-    backgroundColor: "#1DB954",
+    backgroundColor: theme.button.primary,
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -350,17 +346,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 20,
     marginRight: 10,
-    backgroundColor: "#2A2A2A",
+    backgroundColor: theme.background.secondary,
   },
   filterButtonActive: {
-    backgroundColor: "#1DB954",
+    backgroundColor: theme.button.primary,
   },
   filterButtonText: {
-    color: "#999",
+    color: theme.text.secondary,
     fontSize: 14,
   },
   filterButtonTextActive: {
-    color: "#fff",
+    color: theme.text.primary,
     fontWeight: "bold",
   },
   resultsContainer: {
@@ -370,7 +366,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginBottom: 15,
     alignItems: "center",
-    backgroundColor: "#1e1e1e",
+    backgroundColor: theme.background.secondary,
     borderRadius: 10,
     padding: 12,
   },
@@ -383,7 +379,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 5,
-    backgroundColor: "#333",
+    backgroundColor: theme.background.secondary,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -392,22 +388,22 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   songName: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 16,
     fontWeight: "bold",
   },
   artist: {
-    color: "#9ca3af",
+    color: theme.text.secondary,
     fontSize: 14,
     marginTop: 2,
   },
   albumName: {
-    color: "#666",
+    color: theme.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
   itemType: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontSize: 12,
     marginTop: 4,
     fontWeight: "bold",
@@ -418,7 +414,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    color: "white",
+    color: theme.text.primary,
     marginTop: 10,
   },
   noResultsContainer: {
@@ -427,7 +423,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   noResultsText: {
-    color: "#9ca3af",
+    color: theme.text.secondary,
     fontSize: 16,
   },
   spotifyConnectContainer: {
@@ -439,23 +435,23 @@ const styles = StyleSheet.create({
   spotifyConnectTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
     marginBottom: 10,
   },
   spotifyConnectText: {
     fontSize: 16,
-    color: "#9ca3af",
+    color: theme.text.secondary,
     textAlign: "center",
     marginBottom: 30,
   },
   connectButton: {
-    backgroundColor: "#1DB954",
+    backgroundColor: theme.button.primary,
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 25,
   },
   connectButtonText: {
-    color: "white",
+    color: theme.text.primary,
     fontWeight: "bold",
     fontSize: 16,
   },

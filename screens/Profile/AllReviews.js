@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { colors } from "../../theme/colors";
+import { theme } from "../../theme/theme";
 
 export default function AllReviews({ route, navigation }) {
   const { reviews } = route.params;
@@ -20,7 +20,7 @@ export default function AllReviews({ route, navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>All My Reviews</Text>
         <View style={{ width: 24 }} />
@@ -114,7 +114,7 @@ export default function AllReviews({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: theme.background.primary,
   },
   header: {
     flexDirection: "row",
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: theme.background.secondary,
   },
   backButton: {
     padding: 8,
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
     textAlign: "center",
     flex: 1,
   },
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   },
   reviewItem: {
     flexDirection: "row",
-    backgroundColor: colors.background.secondary,
+    backgroundColor: theme.background.secondary,
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
@@ -160,12 +160,12 @@ const styles = StyleSheet.create({
   reviewTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
     marginBottom: 4,
   },
   reviewArtist: {
     fontSize: 14,
-    color: colors.text.secondary,
+    color: theme.text.secondary,
     marginBottom: 6,
   },
   reviewRating: {
@@ -174,32 +174,32 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   ratingText: {
-    color: colors.text.secondary,
+    color: theme.text.secondary,
     fontSize: 14,
     marginLeft: 4,
   },
   reviewText: {
     fontSize: 14,
-    color: colors.text.secondary,
+    color: theme.text.secondary,
     fontStyle: "italic",
   },
   reviewTypeContainer: {
     position: "absolute",
     top: 12,
     right: 12,
-    backgroundColor: "rgba(29, 185, 84, 0.2)",
+    backgroundColor: `${theme.button.primary}33`, // 20% opacity
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
   reviewType: {
     fontSize: 12,
-    color: "#1DB954",
+    color: theme.button.primary,
     fontWeight: "600",
   },
   emptyText: {
     textAlign: "center",
-    color: colors.text.secondary,
+    color: theme.text.secondary,
     marginTop: 24,
     fontSize: 16,
   },

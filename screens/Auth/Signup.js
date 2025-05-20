@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { colors } from "../../theme/colors";
+import { theme } from "../../theme/theme";
 import { auth, db } from "../../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -28,7 +28,7 @@ export default function Signup() {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
-    
+
     // Validate username (no spaces, special characters allowed)
     if (username.includes(" ")) {
       Alert.alert("Error", "Username cannot contain spaces");
@@ -105,18 +105,18 @@ export default function Signup() {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor={colors.input.placeholder}
+          placeholderTextColor={theme.text.secondary}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
           editable={!loading}
         />
-        
+
         <TextInput
           style={styles.input}
           placeholder="Username"
-          placeholderTextColor={colors.input.placeholder}
+          placeholderTextColor={theme.text.secondary}
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
@@ -126,7 +126,7 @@ export default function Signup() {
         <TextInput
           style={styles.input}
           placeholder="Password"
-          placeholderTextColor={colors.input.placeholder}
+          placeholderTextColor={theme.text.secondary}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -136,7 +136,7 @@ export default function Signup() {
         <TextInput
           style={styles.input}
           placeholder="Confirm Password"
-          placeholderTextColor={colors.input.placeholder}
+          placeholderTextColor={theme.text.secondary}
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
@@ -170,7 +170,7 @@ export default function Signup() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: theme.background.primary,
   },
   headerContainer: {
     alignItems: "center",
@@ -180,27 +180,27 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 32,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
     marginBottom: 10,
   },
   subheader: {
     fontSize: 18,
-    color: colors.text.secondary,
+    color: theme.text.secondary,
   },
   formContainer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
   input: {
-    backgroundColor: colors.input.background,
+    backgroundColor: theme.background.secondary,
     borderRadius: 10,
     padding: 15,
-    color: colors.text.primary,
+    color: theme.text.primary,
     fontSize: 16,
     marginBottom: 15,
   },
   signupButton: {
-    backgroundColor: colors.button.primary,
+    backgroundColor: theme.button.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   signupButtonText: {
-    color: colors.text.primary,
+    color: theme.text.primary,
     fontWeight: "bold",
     fontSize: 18,
   },
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loginButtonText: {
-    color: colors.text.secondary,
+    color: theme.text.secondary,
     fontSize: 16,
   },
 });

@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { colors } from "../../theme/colors";
+import { theme } from "../../theme/theme";
 
 export default function AllSongs({ route, navigation }) {
   const { songs } = route.params;
@@ -20,7 +20,7 @@ export default function AllSongs({ route, navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>All Songs</Text>
         <View style={{ width: 24 }} />
@@ -56,7 +56,11 @@ export default function AllSongs({ route, navigation }) {
                 {item.artist}
               </Text>
             </View>
-            <Ionicons name="play-circle-outline" size={24} color="#1DB954" />
+            <Ionicons
+              name="play-circle-outline"
+              size={24}
+              color={theme.button.primary}
+            />
           </TouchableOpacity>
         )}
       />
@@ -67,7 +71,7 @@ export default function AllSongs({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: theme.background.primary,
   },
   header: {
     flexDirection: "row",
@@ -76,7 +80,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: theme.background.secondary,
   },
   backButton: {
     padding: 8,
@@ -84,7 +88,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
   },
   listContent: {
     padding: 16,
@@ -94,7 +98,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    borderBottomColor: theme.background.secondary,
   },
   songImage: {
     width: 50,
@@ -108,11 +112,11 @@ const styles = StyleSheet.create({
   songTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
     marginBottom: 4,
   },
   songArtist: {
     fontSize: 14,
-    color: colors.text.secondary,
+    color: theme.text.secondary,
   },
 });

@@ -13,9 +13,13 @@ import {
   Platform,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { searchSpotify, isSpotifyConnected } from "../../services/spotifyService";
+import {
+  searchSpotify,
+  isSpotifyConnected,
+} from "../../services/spotifyService";
 import { auth, db } from "../../firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { theme } from "../../theme/theme";
 
 export default function LeaveReview({ route, navigation }) {
   const { song } = route.params || {};
@@ -44,24 +48,24 @@ export default function LeaveReview({ route, navigation }) {
     if (filter === activeFilter) {
       // If the current filter is clicked again, deselect it
       setActiveFilter(null);
-      setSearchType('track,album'); // Search both when no filter is selected
+      setSearchType("track,album"); // Search both when no filter is selected
     } else {
       // Select the new filter
       setActiveFilter(filter);
-      
+
       // Update search type based on filter
-      switch(filter) {
-        case 'songs':
-          setSearchType('track');
+      switch (filter) {
+        case "songs":
+          setSearchType("track");
           break;
-        case 'albums':
-          setSearchType('album');
+        case "albums":
+          setSearchType("album");
           break;
         default:
-          setSearchType('track,album'); // Default to both
+          setSearchType("track,album"); // Default to both
       }
     }
-    
+
     // If there's a search query, perform search with new filter
     if (searchQuery.trim()) {
       handleSearch();
@@ -74,63 +78,75 @@ export default function LeaveReview({ route, navigation }) {
     try {
       setLoading(true);
       const results = await searchSpotify(searchQuery, searchType, 20);
-      
+
       let formattedResults = [];
-      
+
       // For tracks/songs
-      if (results.tracks && results.tracks.items && (activeFilter === 'all' || activeFilter === 'songs')) {
-        const trackResults = results.tracks.items.map(track => ({
+      if (
+        results.tracks &&
+        results.tracks.items &&
+        (activeFilter === "all" || activeFilter === "songs")
+      ) {
+        const trackResults = results.tracks.items.map((track) => ({
           id: track.id,
           name: track.name,
           artist: track.artists.map((a) => a.name).join(", "),
           album: track.album.name,
           imageUri: track.album.images[0]?.url,
           spotifyUri: track.uri,
-          type: 'track',
+          type: "track",
         }));
         formattedResults = [...formattedResults, ...trackResults];
       }
-      
+
       // For albums
-      if (results.albums && results.albums.items && (activeFilter === 'all' || activeFilter === 'albums')) {
-        const albumResults = results.albums.items.map(album => ({
+      if (
+        results.albums &&
+        results.albums.items &&
+        (activeFilter === "all" || activeFilter === "albums")
+      ) {
+        const albumResults = results.albums.items.map((album) => ({
           id: album.id,
           name: album.name,
           artist: album.artists.map((a) => a.name).join(", "),
           album: null,
           imageUri: album.images[0]?.url,
           spotifyUri: album.uri,
-          type: 'album',
+          type: "album",
         }));
         formattedResults = [...formattedResults, ...albumResults];
       }
-      
+
       // For artists
-      if (results.artists && results.artists.items && (activeFilter === 'all' || activeFilter === 'artists')) {
-        const artistResults = results.artists.items.map(artist => ({
+      if (
+        results.artists &&
+        results.artists.items &&
+        (activeFilter === "all" || activeFilter === "artists")
+      ) {
+        const artistResults = results.artists.items.map((artist) => ({
           id: artist.id,
           name: artist.name,
           artist: null,
           album: null,
           imageUri: artist.images[0]?.url,
           spotifyUri: artist.uri,
-          type: 'artist',
+          type: "artist",
         }));
         formattedResults = [...formattedResults, ...artistResults];
       }
-      
+
       // Sort results to prioritize exact type matches
       formattedResults.sort((a, b) => {
         // If we're filtering for a specific type, prioritize that type
-        if (activeFilter === 'songs' && a.type === 'track') return -1;
-        if (activeFilter === 'songs' && b.type === 'track') return 1;
-        if (activeFilter === 'albums' && a.type === 'album') return -1;
-        if (activeFilter === 'albums' && b.type === 'album') return 1;
-        if (activeFilter === 'artists' && a.type === 'artist') return -1;
-        if (activeFilter === 'artists' && b.type === 'artist') return 1;
+        if (activeFilter === "songs" && a.type === "track") return -1;
+        if (activeFilter === "songs" && b.type === "track") return 1;
+        if (activeFilter === "albums" && a.type === "album") return -1;
+        if (activeFilter === "albums" && b.type === "album") return 1;
+        if (activeFilter === "artists" && a.type === "artist") return -1;
+        if (activeFilter === "artists" && b.type === "artist") return 1;
         return 0;
       });
-      
+
       setSearchResults(formattedResults);
     } catch (error) {
       console.error("Error searching Spotify:", error);
@@ -206,7 +222,7 @@ export default function LeaveReview({ route, navigation }) {
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1DB954" />
+          <ActivityIndicator size="large" color={theme.button.primary} />
           <Text style={styles.loadingText}>Searching...</Text>
         </View>
       );
@@ -226,51 +242,73 @@ export default function LeaveReview({ route, navigation }) {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.resultItem, selectedSong?.id === item.id && styles.selectedResultItem]}
+            style={[
+              styles.resultItem,
+              selectedSong?.id === item.id && styles.selectedResultItem,
+            ]}
             onPress={() => {
-              // If it's an album, navigate directly to the Album Details page
-              if (item.type === 'album') {
-                navigation.navigate('AlbumScreen', {
+              if (item.type === "album") {
+                navigation.navigate("AlbumScreen", {
                   id: item.id,
                   title: item.name,
                   artist: item.artist,
                   imageUri: item.imageUri,
-                  spotifyUri: item.spotifyUri
+                  spotifyUri: item.spotifyUri,
                 });
-              } else if (item.type === 'artist') {
-                navigation.navigate('Artist', {
+              } else if (item.type === "artist") {
+                navigation.navigate("Artist", {
                   id: item.id,
                   name: item.name,
                   imageUri: item.imageUri,
-                  spotifyUri: item.spotifyUri
+                  spotifyUri: item.spotifyUri,
                 });
               } else {
-                // For tracks, select it for review
                 handleSelectSong(item);
               }
             }}
           >
             {item.imageUri ? (
-              <Image source={{ uri: item.imageUri }} style={styles.resultImage} />
+              <Image
+                source={{ uri: item.imageUri }}
+                style={styles.resultImage}
+              />
             ) : (
               <View style={styles.placeholderImage}>
-                <Ionicons 
-                  name={item.type === 'album' ? "disc" : item.type === 'artist' ? "person" : "musical-note"} 
-                  size={24} 
-                  color="#666" 
+                <Ionicons
+                  name={
+                    item.type === "album"
+                      ? "disc"
+                      : item.type === "artist"
+                      ? "person"
+                      : "musical-note"
+                  }
+                  size={24}
+                  color={theme.text.secondary}
                 />
               </View>
             )}
             <View style={styles.resultTextContainer}>
               <Text style={styles.resultTitle}>{item.name}</Text>
               <Text style={styles.resultArtist}>{item.artist}</Text>
-              {item.album && <Text style={styles.resultAlbum}>{item.album}</Text>}
-              <View style={[styles.typeTag, 
-                item.type === 'track' ? styles.trackTypeTag : 
-                item.type === 'album' ? styles.albumTypeTag : styles.artistTypeTag
-              ]}>
+              {item.album && (
+                <Text style={styles.resultAlbum}>{item.album}</Text>
+              )}
+              <View
+                style={[
+                  styles.typeTag,
+                  item.type === "track"
+                    ? styles.trackTypeTag
+                    : item.type === "album"
+                    ? styles.albumTypeTag
+                    : styles.artistTypeTag,
+                ]}
+              >
                 <Text style={styles.typeTagText}>
-                  {item.type === 'track' ? 'Song' : item.type === 'album' ? 'Album' : 'Artist'}
+                  {item.type === "track"
+                    ? "Song"
+                    : item.type === "album"
+                    ? "Album"
+                    : "Artist"}
                 </Text>
               </View>
             </View>
@@ -290,13 +328,16 @@ export default function LeaveReview({ route, navigation }) {
           <Text style={styles.selectedSongArtist}>{selectedSong.artist}</Text>
         </View>
 
-        <Text style={styles.subtitle}>Rate this {selectedSong.type === 'album' ? 'album' : 'song'}</Text>
+        <Text style={styles.subtitle}>
+          Rate this {selectedSong.type === "album" ? "album" : "song"}
+        </Text>
         <View style={styles.starsContainer}>
           {[1, 2, 3, 4, 5].map((star) => {
             const fullStar = star <= Math.floor(rating);
-            const halfStar = !fullStar && star === Math.floor(rating) + 1 && rating % 1 !== 0;
+            const halfStar =
+              !fullStar && star === Math.floor(rating) + 1 && rating % 1 !== 0;
             const emptyStar = !fullStar && !halfStar;
-            
+
             return (
               <View key={star} style={styles.starContainer}>
                 <TouchableOpacity
@@ -304,13 +345,20 @@ export default function LeaveReview({ route, navigation }) {
                   style={styles.starTouchable}
                 >
                   <Ionicons
-                    name={fullStar ? "star" : halfStar ? "star-half" : "star-outline"}
+                    name={
+                      fullStar
+                        ? "star"
+                        : halfStar
+                        ? "star-half"
+                        : "star-outline"
+                    }
                     size={32}
-                    color={fullStar || halfStar ? "#FFD700" : "#444"}
+                    color={
+                      fullStar || halfStar ? "#FFD700" : theme.text.secondary
+                    }
                   />
                 </TouchableOpacity>
-                
-                {/* Half-star touchable area */}
+
                 <TouchableOpacity
                   onPress={() => setRating(star - 0.5)}
                   style={[styles.halfStarTouchable]}
@@ -319,14 +367,14 @@ export default function LeaveReview({ route, navigation }) {
             );
           })}
         </View>
-        
+
         <Text style={styles.ratingText}>{rating.toFixed(1)}/5.0</Text>
 
         <Text style={styles.subtitle}>Add Review:</Text>
         <TextInput
           style={styles.textArea}
           placeholder="Write your review..."
-          placeholderTextColor="#aaa"
+          placeholderTextColor={theme.text.secondary}
           multiline
           numberOfLines={6}
           value={reviewText}
@@ -369,7 +417,6 @@ export default function LeaveReview({ route, navigation }) {
           </TouchableOpacity>
         </View>
       ) : directReviewMode ? (
-        // Direct review mode - skip search and show review form directly
         renderReviewForm()
       ) : (
         <>
@@ -377,7 +424,7 @@ export default function LeaveReview({ route, navigation }) {
             <TextInput
               style={styles.searchInput}
               placeholder="Search for music..."
-              placeholderTextColor="#aaa"
+              placeholderTextColor={theme.text.secondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               onSubmitEditing={handleSearch}
@@ -386,35 +433,74 @@ export default function LeaveReview({ route, navigation }) {
               style={styles.searchButton}
               onPress={handleSearch}
             >
-              <Ionicons name="search" size={24} color="white" />
+              <Ionicons name="search" size={24} color={theme.text.primary} />
             </TouchableOpacity>
           </View>
-          
-          {/* Filter buttons */}
+
           <View style={styles.filterContainer}>
             <TouchableOpacity
-              style={[styles.filterButton, activeFilter === 'all' && styles.activeFilterButton]}
-              onPress={() => handleFilterChange('all')}
+              style={[
+                styles.filterButton,
+                activeFilter === "all" && styles.activeFilterButton,
+              ]}
+              onPress={() => handleFilterChange("all")}
             >
-              <Text style={[styles.filterText, activeFilter === 'all' && styles.activeFilterText]}>All</Text>
+              <Text
+                style={[
+                  styles.filterText,
+                  activeFilter === "all" && styles.activeFilterText,
+                ]}
+              >
+                All
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.filterButton, activeFilter === 'songs' && styles.activeFilterButton]}
-              onPress={() => handleFilterChange('songs')}
+              style={[
+                styles.filterButton,
+                activeFilter === "songs" && styles.activeFilterButton,
+              ]}
+              onPress={() => handleFilterChange("songs")}
             >
-              <Text style={[styles.filterText, activeFilter === 'songs' && styles.activeFilterText]}>Songs</Text>
+              <Text
+                style={[
+                  styles.filterText,
+                  activeFilter === "songs" && styles.activeFilterText,
+                ]}
+              >
+                Songs
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.filterButton, activeFilter === 'albums' && styles.activeFilterButton]}
-              onPress={() => handleFilterChange('albums')}
+              style={[
+                styles.filterButton,
+                activeFilter === "albums" && styles.activeFilterButton,
+              ]}
+              onPress={() => handleFilterChange("albums")}
             >
-              <Text style={[styles.filterText, activeFilter === 'albums' && styles.activeFilterText]}>Albums</Text>
+              <Text
+                style={[
+                  styles.filterText,
+                  activeFilter === "albums" && styles.activeFilterText,
+                ]}
+              >
+                Albums
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.filterButton, activeFilter === 'artists' && styles.activeFilterButton]}
-              onPress={() => handleFilterChange('artists')}
+              style={[
+                styles.filterButton,
+                activeFilter === "artists" && styles.activeFilterButton,
+              ]}
+              onPress={() => handleFilterChange("artists")}
             >
-              <Text style={[styles.filterText, activeFilter === 'artists' && styles.activeFilterText]}>Artists</Text>
+              <Text
+                style={[
+                  styles.filterText,
+                  activeFilter === "artists" && styles.activeFilterText,
+                ]}
+              >
+                Artists
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -438,7 +524,7 @@ export default function LeaveReview({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
   },
   header: {
     flexDirection: "row",
@@ -448,15 +534,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
   },
   cancelButton: {
-    color: "#9ca3af",
+    color: theme.text.secondary,
     fontSize: 16,
     textDecorationLine: "underline",
   },
@@ -465,29 +551,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
   },
   filterContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
-    backgroundColor: "#1e1e1e",
+    borderBottomColor: theme.background.secondary,
+    backgroundColor: theme.background.secondary,
   },
   filterButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 15,
     borderWidth: 1,
-    borderColor: "#666",
+    borderColor: theme.text.secondary,
   },
   activeFilterButton: {
-    backgroundColor: "#1DB954",
-    borderColor: "#1DB954",
+    backgroundColor: theme.button.primary,
+    borderColor: theme.button.primary,
   },
   filterText: {
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: 12,
   },
   activeFilterText: {
@@ -495,15 +581,15 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    backgroundColor: "#1e1e1e",
+    backgroundColor: theme.background.secondary,
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 10,
-    color: "white",
+    color: theme.text.primary,
     marginRight: 10,
   },
   searchButton: {
-    backgroundColor: "#1DB954",
+    backgroundColor: theme.button.primary,
     borderRadius: 20,
     width: 44,
     height: 44,
@@ -515,7 +601,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    color: "white",
+    color: theme.text.primary,
     marginTop: 10,
   },
   noResultsContainer: {
@@ -523,17 +609,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   noResultsText: {
-    color: "#9ca3af",
+    color: theme.text.secondary,
     fontSize: 16,
   },
   resultItem: {
     flexDirection: "row",
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
   },
   selectedResultItem: {
-    backgroundColor: "rgba(29, 185, 84, 0.1)",
+    backgroundColor: `${theme.button.primary}1A`, // 10% opacity
   },
   resultImage: {
     width: 60,
@@ -544,7 +630,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 5,
-    backgroundColor: "#333",
+    backgroundColor: theme.background.secondary,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -554,17 +640,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   resultTitle: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 16,
     fontWeight: "bold",
   },
   resultArtist: {
-    color: "#9ca3af",
+    color: theme.text.secondary,
     fontSize: 14,
     marginTop: 2,
   },
   resultAlbum: {
-    color: "#666",
+    color: theme.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
@@ -572,37 +658,37 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 8,
     borderRadius: 12,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginTop: 4,
   },
   trackTypeTag: {
-    backgroundColor: '#1e3a8a',
+    backgroundColor: "#1e3a8a",
   },
   albumTypeTag: {
-    backgroundColor: '#1DB954',
+    backgroundColor: theme.button.primary,
   },
   artistTypeTag: {
-    backgroundColor: '#9333ea',
+    backgroundColor: "#9333ea",
   },
   typeTagText: {
-    color: 'white',
+    color: theme.text.primary,
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   selectedSongContainer: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
-    backgroundColor: "#1e1e1e",
+    borderBottomColor: theme.background.secondary,
+    backgroundColor: theme.background.secondary,
   },
   selectedSongTitle: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",
   },
   selectedSongArtist: {
-    color: "#9ca3af",
+    color: theme.text.secondary,
     fontSize: 14,
     textAlign: "center",
     marginTop: 5,
@@ -631,11 +717,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   halfStarTouchable: {
-    position: 'absolute',
+    position: "absolute",
     width: 16,
     height: 32,
     left: 0,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   ratingText: {
     color: "#FFD700",
@@ -645,29 +731,29 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   textArea: {
-    backgroundColor: "#1e1e1e",
+    backgroundColor: theme.background.secondary,
     borderRadius: 10,
     padding: 15,
-    color: "white",
+    color: theme.text.primary,
     fontSize: 16,
     height: 120,
     marginBottom: 20,
   },
   saveButton: {
-    backgroundColor: "#1DB954", // Spotify green
+    backgroundColor: theme.button.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
   },
   saveButtonText: {
-    color: "white",
+    color: theme.text.primary,
     fontWeight: "bold",
     fontSize: 18,
   },
   subtitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
     marginBottom: 10,
     marginTop: 20,
     textAlign: "center",
@@ -681,23 +767,23 @@ const styles = StyleSheet.create({
   spotifyConnectTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
     marginBottom: 10,
   },
   spotifyConnectText: {
     fontSize: 16,
-    color: "#9ca3af",
+    color: theme.text.secondary,
     textAlign: "center",
     marginBottom: 30,
   },
   connectButton: {
-    backgroundColor: "#1DB954",
+    backgroundColor: theme.button.primary,
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 25,
   },
   connectButtonText: {
-    color: "white",
+    color: theme.text.primary,
     fontWeight: "bold",
     fontSize: 16,
   },

@@ -26,6 +26,7 @@ import {
 } from "firebase/firestore";
 import { getTrackDetails, getArtist } from "../../services/spotifyService";
 import { useRoute } from "@react-navigation/native";
+import { theme } from "../../theme/theme";
 
 export default function InfoScreen({ route, navigation }) {
   const { id, title, artist, imageUri, type, spotifyUri, albumId, albumTitle } =
@@ -312,11 +313,15 @@ export default function InfoScreen({ route, navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Song Info</Text>
         <TouchableOpacity onPress={openInSpotify}>
-          <Ionicons name="play-circle-outline" size={28} color="#1DB954" />
+          <Ionicons
+            name="play-circle-outline"
+            size={28}
+            color={theme.button.primary}
+          />
         </TouchableOpacity>
       </View>
 
@@ -359,7 +364,7 @@ export default function InfoScreen({ route, navigation }) {
         {loading ? (
           <ActivityIndicator
             size="small"
-            color="#1DB954"
+            color={theme.button.primary}
             style={styles.loader}
           />
         ) : (
@@ -504,7 +509,7 @@ export default function InfoScreen({ route, navigation }) {
                   color={
                     hasReviews && star <= Math.ceil(avgRating)
                       ? "#FFD700"
-                      : "#444"
+                      : theme.text.secondary
                   }
                   style={{ marginRight: 5 }}
                 />
@@ -533,7 +538,11 @@ export default function InfoScreen({ route, navigation }) {
               })
             }
           >
-            <Ionicons name="create-outline" size={20} color="white" />
+            <Ionicons
+              name="create-outline"
+              size={20}
+              color={theme.text.primary}
+            />
             <Text style={styles.buttonText}>
               {userReview ? "Edit Review" : "Leave Review"}
             </Text>
@@ -547,7 +556,7 @@ export default function InfoScreen({ route, navigation }) {
             <Ionicons
               name={isSaved ? "heart" : "heart-outline"}
               size={20}
-              color={isSaved ? "#1DB954" : "white"}
+              color={isSaved ? theme.button.primary : theme.text.primary}
             />
             <Text
               style={[styles.buttonText, isSaved && styles.savedButtonText]}
@@ -557,7 +566,11 @@ export default function InfoScreen({ route, navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.button}>
-            <Ionicons name="share-social-outline" size={20} color="white" />
+            <Ionicons
+              name="share-social-outline"
+              size={20}
+              color={theme.text.primary}
+            />
             <Text style={styles.buttonText}>Share</Text>
           </TouchableOpacity>
         </View>
@@ -569,7 +582,7 @@ export default function InfoScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
   },
   header: {
     flexDirection: "row",
@@ -578,10 +591,10 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 10,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
   },
   headerTitle: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 18,
     fontWeight: "bold",
   },
@@ -599,18 +612,18 @@ const styles = StyleSheet.create({
     paddingRight: 15,
   },
   itemTitle: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 5,
   },
   artist: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 16,
     marginBottom: 5,
   },
   albumTitle: {
-    color: "#666",
+    color: theme.text.secondary,
     fontSize: 14,
     marginBottom: 8,
   },
@@ -620,7 +633,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   genreTag: {
-    backgroundColor: "#333",
+    backgroundColor: theme.background.secondary,
     borderRadius: 12,
     paddingVertical: 3,
     paddingHorizontal: 8,
@@ -628,7 +641,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   genreText: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontSize: 12,
     fontWeight: "bold",
   },
@@ -639,15 +652,15 @@ const styles = StyleSheet.create({
   },
   userReviewContainer: {
     marginBottom: 20,
-    backgroundColor: "#1E1E1E",
+    backgroundColor: theme.background.secondary,
     borderRadius: 8,
     overflow: "hidden",
   },
   userReviewTitle: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 16,
     fontWeight: "bold",
-    backgroundColor: "#333",
+    backgroundColor: theme.background.primary,
     padding: 10,
   },
   userReviewContent: {
@@ -664,12 +677,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   userReviewText: {
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: 14,
     lineHeight: 20,
   },
   userReviewDate: {
-    color: "#666",
+    color: theme.text.secondary,
     fontSize: 12,
     marginTop: 10,
     textAlign: "right",
@@ -678,20 +691,19 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   sectionTitle: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
   },
   divider: {
     height: 1,
-    backgroundColor: "#333",
+    backgroundColor: theme.background.secondary,
     marginBottom: 5,
   },
   overallRatingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    // marginBottom: 10,
   },
   starsRow: {
     flexDirection: "row",
@@ -707,17 +719,17 @@ const styles = StyleSheet.create({
     width: 220,
     marginRight: 16,
     padding: 12,
-    backgroundColor: "#1e1e1e",
+    backgroundColor: theme.background.secondary,
     borderRadius: 8,
   },
   reviewUser: {
-    color: "white",
+    color: theme.text.primary,
     fontWeight: "bold",
     fontSize: 16,
     marginBottom: 4,
   },
   reviewText: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 14,
     fontStyle: "italic",
     marginBottom: 4,
@@ -728,10 +740,10 @@ const styles = StyleSheet.create({
     marginTop: 30,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: "#333",
+    borderTopColor: theme.background.secondary,
   },
   button: {
-    backgroundColor: "#1e1e1e",
+    backgroundColor: theme.background.secondary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -742,15 +754,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   buttonText: {
-    color: "white",
+    color: theme.text.primary,
     marginLeft: 5,
     fontSize: 12,
   },
   savedButtonText: {
-    color: "#1DB954",
+    color: theme.button.primary,
   },
   emptyText: {
-    color: "#666",
+    color: theme.text.secondary,
     fontSize: 14,
     textAlign: "center",
   },
@@ -762,7 +774,7 @@ const styles = StyleSheet.create({
   sectionTitleWithMargin: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
     marginTop: 32,
     marginBottom: 10,
   },

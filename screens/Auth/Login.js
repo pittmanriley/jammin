@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { colors } from "../../theme/colors";
+import { theme } from "../../theme/theme";
 import { auth } from "../../firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
@@ -78,7 +78,7 @@ export default function Login() {
           <TextInput
             style={styles.input}
             placeholder="Email"
-            placeholderTextColor={colors.input.placeholder}
+            placeholderTextColor={theme.text.secondary}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -89,7 +89,7 @@ export default function Login() {
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor={colors.input.placeholder}
+            placeholderTextColor={theme.text.secondary}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -124,7 +124,7 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: theme.background.primary,
     paddingTop: 50,
   },
   headerContainer: {
@@ -140,26 +140,26 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 42,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
     marginBottom: 10,
   },
   subheader: {
     fontSize: 18,
-    color: colors.text.secondary,
+    color: theme.text.secondary,
   },
   formContainer: {
     paddingHorizontal: 20,
   },
   input: {
-    backgroundColor: colors.input.background,
+    backgroundColor: theme.background.secondary,
     borderRadius: 10,
     padding: 15,
-    color: colors.text.primary,
+    color: theme.text.primary,
     fontSize: 16,
     marginBottom: 15,
   },
   loginButton: {
-    backgroundColor: colors.button.primary,
+    backgroundColor: theme.button.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   loginButtonText: {
-    color: colors.text.primary,
+    color: theme.text.primary,
     fontWeight: "bold",
     fontSize: 18,
   },
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   signupButtonText: {
-    color: colors.text.secondary,
+    color: theme.text.secondary,
     fontSize: 16,
   },
 });

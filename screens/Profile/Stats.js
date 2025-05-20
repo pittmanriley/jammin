@@ -14,6 +14,7 @@ import {
   getUserListeningStats,
   isSpotifyConnected,
 } from "../../services/spotifyService";
+import { theme } from "../../theme/theme";
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -293,7 +294,7 @@ export default function Stats({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
   },
   centerContent: {
     justifyContent: "center",
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: "white",
+    color: theme.text.primary,
   },
   header: {
     flexDirection: "row",
@@ -312,12 +313,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
   },
   backButton: {
     padding: 5,
@@ -339,36 +340,36 @@ const styles = StyleSheet.create({
   spotifyConnectCard: {
     margin: 16,
     padding: 16,
-    backgroundColor: "#1E1E1E",
+    backgroundColor: theme.background.secondary,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#1DB954",
+    borderColor: theme.button.primary,
     alignItems: "center",
   },
   connectCardTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
     marginBottom: 8,
   },
   connectCardText: {
     fontSize: 14,
-    color: "#9ca3af",
+    color: theme.text.secondary,
     textAlign: "center",
     marginBottom: 16,
   },
   connectButton: {
-    backgroundColor: "#1DB954",
+    backgroundColor: theme.button.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
   },
   connectButtonText: {
-    color: "white",
+    color: theme.text.primary,
     fontWeight: "bold",
   },
   topItemCard: {
-    backgroundColor: "#1E1E1E",
+    backgroundColor: theme.background.secondary,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -376,7 +377,7 @@ const styles = StyleSheet.create({
   topItemTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
     marginBottom: 12,
   },
   topItemContent: {
@@ -395,16 +396,16 @@ const styles = StyleSheet.create({
   topItemName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#1DB954",
+    color: theme.button.primary,
     marginBottom: 4,
   },
   topItemArtist: {
     fontSize: 14,
-    color: "#9ca3af",
+    color: theme.text.secondary,
   },
   statCard: {
     flexDirection: "row",
-    backgroundColor: "#1E1E1E",
+    backgroundColor: theme.background.secondary,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -418,7 +419,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: "rgba(29, 185, 84, 0.1)",
+    backgroundColor: "rgba(153, 153, 230, 0.1)",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
@@ -429,18 +430,18 @@ const styles = StyleSheet.create({
   statTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
     marginBottom: 4,
   },
   statValue: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#1DB954",
+    color: theme.button.primary,
     marginBottom: 4,
   },
   statSubtext: {
     fontSize: 14,
-    color: "#9ca3af",
+    color: theme.text.secondary,
   },
   genreContainer: {
     flexDirection: "row",
@@ -448,7 +449,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   genreTag: {
-    backgroundColor: "rgba(29, 185, 84, 0.2)",
+    backgroundColor: "rgba(153, 153, 230, 0.2)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -456,7 +457,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   genreText: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontWeight: "500",
   },
 });

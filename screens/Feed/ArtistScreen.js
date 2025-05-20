@@ -15,6 +15,7 @@ import {
   getArtistTopTracks,
   getArtistAlbums,
 } from "../../services/spotifyService";
+import { theme } from "../../theme/theme";
 
 export default function ArtistScreen({ route, navigation }) {
   const { id, name, imageUri, spotifyUri } = route.params;
@@ -156,7 +157,7 @@ export default function ArtistScreen({ route, navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Artist</Text>
         <View style={styles.placeholder} />
@@ -164,7 +165,7 @@ export default function ArtistScreen({ route, navigation }) {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1DB954" />
+          <ActivityIndicator size="large" color={theme.button.primary} />
         </View>
       ) : (
         <ScrollView style={styles.content}>
@@ -235,7 +236,11 @@ export default function ArtistScreen({ route, navigation }) {
               console.log("Open in Spotify:", spotifyUri);
             }}
           >
-            <Ionicons name="musical-notes" size={20} color="#fff" />
+            <Ionicons
+              name="musical-notes"
+              size={20}
+              color={theme.text.primary}
+            />
             <Text style={styles.spotifyButtonText}>Open in Spotify</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -247,7 +252,7 @@ export default function ArtistScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
   },
   header: {
     flexDirection: "row",
@@ -256,7 +261,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 16,
     paddingBottom: 16,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
   },
   backButton: {
     padding: 8,
@@ -264,7 +269,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#fff",
+    color: theme.text.primary,
   },
   placeholder: {
     width: 40,
@@ -290,12 +295,12 @@ const styles = StyleSheet.create({
   artistName: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#fff",
+    color: theme.text.primary,
     marginBottom: 8,
   },
   followerCount: {
     fontSize: 14,
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     marginBottom: 16,
   },
   genresContainer: {
@@ -304,14 +309,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   genreTag: {
-    backgroundColor: "#333",
+    backgroundColor: theme.background.secondary,
     borderRadius: 12,
     paddingVertical: 4,
     paddingHorizontal: 12,
     margin: 4,
   },
   genreText: {
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: 12,
   },
   sectionContainer: {
@@ -321,7 +326,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#fff",
+    color: theme.text.primary,
     marginBottom: 16,
   },
   trackItem: {
@@ -329,11 +334,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
   },
   trackNumber: {
     width: 30,
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 14,
     textAlign: "center",
   },
@@ -347,15 +352,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   trackTitle: {
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: 16,
   },
   trackAlbum: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 12,
   },
   trackDuration: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 12,
     marginLeft: 8,
   },
@@ -373,16 +378,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   albumTitle: {
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: 14,
     marginBottom: 4,
   },
   albumYear: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 12,
   },
   emptyText: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 14,
     fontStyle: "italic",
     textAlign: "center",
@@ -390,7 +395,7 @@ const styles = StyleSheet.create({
   },
   spotifyButton: {
     flexDirection: "row",
-    backgroundColor: "#1DB954",
+    backgroundColor: theme.button.primary,
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -400,7 +405,7 @@ const styles = StyleSheet.create({
     marginVertical: 30,
   },
   spotifyButtonText: {
-    color: "#fff",
+    color: theme.text.primary,
     fontWeight: "bold",
     marginLeft: 8,
   },

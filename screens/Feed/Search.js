@@ -15,6 +15,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { searchSpotify } from "../../services/spotifyService";
 import { auth, db } from "../../firebaseConfig";
 import { doc, updateDoc, getDoc, arrayUnion } from "firebase/firestore";
+import { theme } from "../../theme/theme";
 
 export default function Search() {
   const navigation = useNavigation();
@@ -194,7 +195,7 @@ export default function Search() {
           <Ionicons
             name={isSaved ? "bookmark" : "bookmark-outline"}
             size={24}
-            color={isSaved ? "#1DB954" : "#fff"}
+            color={isSaved ? theme.button.primary : theme.text.primary}
           />
         </TouchableOpacity>
       </View>
@@ -208,7 +209,7 @@ export default function Search() {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Search</Text>
       </View>
@@ -218,13 +219,13 @@ export default function Search() {
           <Ionicons
             name="search"
             size={20}
-            color="#999"
+            color={theme.text.secondary}
             style={styles.searchIcon}
           />
           <TextInput
             style={styles.searchInput}
             placeholder="Search for songs, albums, artists..."
-            placeholderTextColor="#999"
+            placeholderTextColor={theme.text.secondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
@@ -235,7 +236,11 @@ export default function Search() {
               onPress={() => setSearchQuery("")}
               style={styles.clearButton}
             >
-              <Ionicons name="close-circle" size={20} color="#999" />
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={theme.text.secondary}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -301,7 +306,7 @@ export default function Search() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1DB954" />
+          <ActivityIndicator size="large" color={theme.button.primary} />
           <Text style={styles.loadingText}>Searching...</Text>
         </View>
       ) : (
@@ -332,14 +337,14 @@ export default function Search() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
     paddingTop: 50,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
   },
   backButton: {
     marginRight: 16,
@@ -347,17 +352,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#fff",
+    color: theme.text.primary,
   },
   searchContainer: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
   },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#2A2A2A",
+    backgroundColor: theme.background.secondary,
     borderRadius: 8,
     paddingHorizontal: 12,
   },
@@ -367,7 +372,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 40,
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: 16,
   },
   clearButton: {
@@ -382,17 +387,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 16,
     marginRight: 8,
-    backgroundColor: "#2A2A2A",
+    backgroundColor: theme.background.secondary,
   },
   filterButtonActive: {
-    backgroundColor: "#1DB954",
+    backgroundColor: theme.button.primary,
   },
   filterButtonText: {
-    color: "#999",
+    color: theme.text.secondary,
     fontSize: 14,
   },
   filterButtonTextActive: {
-    color: "#fff",
+    color: theme.text.primary,
     fontWeight: "bold",
   },
   loadingContainer: {
@@ -402,7 +407,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: 16,
   },
   resultsList: {
@@ -411,7 +416,7 @@ const styles = StyleSheet.create({
   resultItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E1E1E",
+    backgroundColor: theme.background.secondary,
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
@@ -431,17 +436,17 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   resultTitle: {
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: 16,
     fontWeight: "bold",
   },
   resultArtist: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 14,
     marginTop: 2,
   },
   resultType: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontSize: 12,
     marginTop: 4,
   },
@@ -455,7 +460,7 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   emptyText: {
-    color: "#999",
+    color: theme.text.secondary,
     fontSize: 16,
     textAlign: "center",
     paddingHorizontal: 20,

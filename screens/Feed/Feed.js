@@ -21,6 +21,7 @@ import {
 } from "../../services/feedService";
 import { auth, db } from "../../firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { theme } from "../../theme/theme";
 
 const windowWidth = Dimensions.get("window").width;
 const imageSize = 120; // Adjust as needed
@@ -192,7 +193,7 @@ export default function Feed({ navigation }) {
         <Ionicons
           name="search"
           size={28}
-          color="white"
+          color={theme.text.primary}
           style={styles.searchIcon}
           onPress={() => navigation.navigate("LeaveReview")}
         />
@@ -205,14 +206,14 @@ export default function Feed({ navigation }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#1DB954"
-            colors={["#1DB954"]}
+            tintColor={theme.button.primary}
+            colors={[theme.button.primary]}
           />
         }
       >
         {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#1DB954" />
+            <ActivityIndicator size="large" color={theme.button.primary} />
           </View>
         ) : (
           <>
@@ -334,7 +335,7 @@ export default function Feed({ navigation }) {
                                   key={i}
                                   name="star-outline"
                                   size={12}
-                                  color="#666"
+                                  color={theme.text.secondary}
                                 />
                               );
                             }
@@ -380,7 +381,7 @@ export default function Feed({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
     paddingTop: 50,
   },
   loadingContainer: {
@@ -390,12 +391,12 @@ const styles = StyleSheet.create({
     paddingVertical: 50,
   },
   loadingText: {
-    color: "#ffffff",
+    color: theme.text.primary,
     marginTop: 10,
     fontSize: 16,
   },
   headerContainer: {
-    alignItems: "center", // center the Jammin' title
+    alignItems: "center",
     justifyContent: "center",
     position: "relative",
     marginBottom: 20,
@@ -404,7 +405,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     marginTop: 10,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
     textAlign: "center",
   },
   searchIcon: {
@@ -426,16 +427,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#ffffff",
+    color: theme.text.primary,
   },
   viewMoreButton: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: "rgba(29, 185, 84, 0.1)",
+    backgroundColor: `${theme.button.primary}1A`, // 10% opacity
   },
   viewMoreText: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   imageLabel: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 12,
     marginTop: 4,
     textAlign: "center",
@@ -466,7 +467,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   typeText: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontSize: 10,
     fontWeight: "bold",
   },
@@ -474,7 +475,7 @@ const styles = StyleSheet.create({
     width: 160,
     height: 190,
     marginRight: 12,
-    backgroundColor: "#1E1E1E",
+    backgroundColor: theme.background.secondary,
     borderRadius: 8,
     overflow: "hidden",
   },
@@ -487,13 +488,13 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   reviewItemTitle: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 14,
     fontWeight: "bold",
     marginBottom: 4,
   },
   reviewItemArtist: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 12,
     marginBottom: 6,
   },
@@ -509,7 +510,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   emptyListText: {
-    color: "#888",
+    color: theme.text.secondary,
     fontSize: 16,
     textAlign: "center",
     marginTop: 10,

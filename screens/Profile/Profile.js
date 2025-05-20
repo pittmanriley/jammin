@@ -31,6 +31,7 @@ import {
 import { disconnectSpotify } from "../../services/spotifyService";
 import * as ImagePicker from "expo-image-picker";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { theme } from "../../theme/theme";
 
 const windowWidth = Dimensions.get("window").width;
 const imageSize = 120; // Adjust size for albums/songs
@@ -388,7 +389,7 @@ export default function Profile({ navigation: propNavigation }) {
               <Ionicons
                 name="create-outline"
                 size={22}
-                color="white"
+                color={theme.text.primary}
                 style={styles.menuIcon}
               />
               <Text style={styles.menuText}>Edit Profile</Text>
@@ -415,8 +416,8 @@ export default function Profile({ navigation: propNavigation }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#1DB954"]}
-            tintColor={"#1DB954"}
+            colors={[theme.button.primary]}
+            tintColor={theme.button.primary}
           />
         }
       >
@@ -426,7 +427,11 @@ export default function Profile({ navigation: propNavigation }) {
             style={styles.statsButton}
             onPress={() => navigation.navigate("Stats")}
           >
-            <Ionicons name="stats-chart-outline" size={24} color="white" />
+            <Ionicons
+              name="stats-chart-outline"
+              size={24}
+              color={theme.text.primary}
+            />
           </TouchableOpacity>
 
           {/* Edit/Save Button */}
@@ -447,7 +452,11 @@ export default function Profile({ navigation: propNavigation }) {
               style={styles.menuButton}
               onPress={() => setMenuVisible(true)}
             >
-              <Ionicons name="ellipsis-vertical" size={24} color="white" />
+              <Ionicons
+                name="ellipsis-vertical"
+                size={24}
+                color={theme.text.primary}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -467,7 +476,7 @@ export default function Profile({ navigation: propNavigation }) {
           >
             {uploadingImage ? (
               <View style={[styles.profilePic, styles.uploadingContainer]}>
-                <ActivityIndicator size="small" color="#1DB954" />
+                <ActivityIndicator size="small" color={theme.button.primary} />
               </View>
             ) : profilePicUrl ? (
               <>
@@ -477,14 +486,17 @@ export default function Profile({ navigation: propNavigation }) {
                 />
                 {editMode && (
                   <View style={styles.editProfilePicOverlay}>
-                    <Ionicons name="camera" size={24} color="white" />
+                    <Ionicons
+                      name="camera"
+                      size={24}
+                      color={theme.text.primary}
+                    />
                   </View>
                 )}
               </>
             ) : (
-              // No profile picture: show circle outline with camera icon
               <View style={styles.profilePicPlaceholder}>
-                <Ionicons name="camera" size={32} color="#fff" />
+                <Ionicons name="camera" size={32} color={theme.text.primary} />
               </View>
             )}
           </TouchableOpacity>
@@ -497,7 +509,7 @@ export default function Profile({ navigation: propNavigation }) {
             value={displayName}
             onChangeText={setDisplayName}
             placeholder="Your name"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={theme.text.secondary}
           />
         ) : (
           <Text style={styles.username}>{displayName}</Text>
@@ -512,7 +524,7 @@ export default function Profile({ navigation: propNavigation }) {
               value={username}
               onChangeText={setUsername}
               placeholder="username"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={theme.text.secondary}
             />
           </View>
         ) : null}
@@ -524,7 +536,7 @@ export default function Profile({ navigation: propNavigation }) {
             value={bio}
             onChangeText={setBio}
             placeholder="Write something about yourself"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={theme.text.secondary}
             multiline
           />
         ) : (
@@ -541,7 +553,11 @@ export default function Profile({ navigation: propNavigation }) {
                 navigation.navigate("Search", { fromScreen: "Profile" })
               }
             >
-              <Ionicons name="add-circle" size={24} color="#1DB954" />
+              <Ionicons
+                name="add-circle"
+                size={24}
+                color={theme.button.primary}
+              />
             </TouchableOpacity>
           </View>
           {savedAlbums.length > 0 ? (
@@ -561,7 +577,11 @@ export default function Profile({ navigation: propNavigation }) {
                 navigation.navigate("Search", { fromScreen: "Profile" })
               }
             >
-              <Ionicons name="add-circle" size={24} color="#1DB954" />
+              <Ionicons
+                name="add-circle"
+                size={24}
+                color={theme.button.primary}
+              />
             </TouchableOpacity>
           </View>
           {savedTracks.length > 0 ? (
@@ -702,7 +722,7 @@ export default function Profile({ navigation: propNavigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
     paddingTop: 50,
   },
   loadingContainer: {
@@ -711,7 +731,7 @@ const styles = StyleSheet.create({
     paddingVertical: 50,
   },
   loadingText: {
-    color: "#ffffff",
+    color: theme.text.primary,
     marginTop: 10,
     fontSize: 16,
   },
@@ -733,19 +753,19 @@ const styles = StyleSheet.create({
     marginRight: 10,
     padding: 8,
     borderRadius: 5,
-    backgroundColor: "#333",
+    backgroundColor: theme.background.secondary,
   },
   cancelButtonText: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 14,
   },
   saveButton: {
     padding: 8,
     borderRadius: 5,
-    backgroundColor: "#1DB954",
+    backgroundColor: theme.button.primary,
   },
   saveButtonText: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 14,
     fontWeight: "bold",
   },
@@ -759,7 +779,7 @@ const styles = StyleSheet.create({
   usernameText: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "white",
+    color: theme.text.primary,
   },
   profilePicWrapper: {
     alignItems: "center",
@@ -788,25 +808,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   uploadingContainer: {
-    backgroundColor: "#2A2A2A",
+    backgroundColor: theme.background.secondary,
     justifyContent: "center",
     alignItems: "center",
   },
   username: {
     fontSize: 22,
-    color: "white",
+    color: theme.text.primary,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 5,
   },
   editNameInput: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 5,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
     paddingBottom: 5,
   },
   usernameInputContainer: {
@@ -817,27 +837,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   usernamePrefix: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontSize: 18,
     fontWeight: "bold",
   },
   usernameInput: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 18,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
     paddingBottom: 5,
     marginLeft: 5,
     width: 200,
   },
   editBioInput: {
     fontSize: 14,
-    color: "white",
+    color: theme.text.primary,
     textAlign: "center",
     marginBottom: 20,
     paddingHorizontal: 30,
     borderWidth: 1,
-    borderColor: "#1DB954",
+    borderColor: theme.button.primary,
     borderRadius: 10,
     padding: 10,
     width: "80%",
@@ -854,16 +874,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: "rgba(29, 185, 84, 0.1)",
+    backgroundColor: `${theme.button.primary}1A`, // 10% opacity
   },
   viewMoreText: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontSize: 12,
     fontWeight: "600",
   },
   sectionTitle: {
     fontSize: 20,
-    color: "white",
+    color: theme.text.primary,
     fontWeight: "bold",
     marginLeft: 16,
   },
@@ -874,7 +894,7 @@ const styles = StyleSheet.create({
     width: 160,
     height: 200,
     marginRight: 12,
-    backgroundColor: "#1E1E1E",
+    backgroundColor: theme.background.secondary,
     borderRadius: 8,
     overflow: "hidden",
   },
@@ -887,13 +907,13 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   reviewItemTitle: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 14,
     fontWeight: "bold",
     marginBottom: 4,
   },
   reviewItemArtist: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 12,
     marginBottom: 6,
   },
@@ -912,7 +932,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   imageLabel: {
-    color: "#B0B0B0",
+    color: theme.text.secondary,
     fontSize: 14,
     textAlign: "center",
     marginTop: 5,
@@ -920,13 +940,13 @@ const styles = StyleSheet.create({
   },
   userBio: {
     fontSize: 14,
-    color: "#9ca3af", // soft gray
+    color: theme.text.secondary,
     textAlign: "center",
     marginBottom: 20,
-    paddingHorizontal: 30, // so the text doesn't hit the screen edges
+    paddingHorizontal: 30,
   },
   section: {
-    marginBottom: 30, // Control vertical spacing between sections
+    marginBottom: 30,
   },
   iconRow: {
     flexDirection: "row",
@@ -935,7 +955,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   emptyListText: {
-    color: "#9ca3af",
+    color: theme.text.secondary,
     fontSize: 14,
     fontStyle: "italic",
     textAlign: "center",
@@ -949,14 +969,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   emptyText: {
-    color: "#9ca3af",
+    color: theme.text.secondary,
     fontStyle: "italic",
     textAlign: "center",
     marginVertical: 20,
   },
   reviewItem: {
     flexDirection: "row",
-    backgroundColor: "#1e1e1e",
+    backgroundColor: theme.background.secondary,
     borderRadius: 8,
     marginBottom: 12,
     padding: 12,
@@ -972,13 +992,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reviewTitle: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 2,
   },
   reviewArtist: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 14,
     marginBottom: 4,
   },
@@ -994,38 +1014,37 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   reviewText: {
-    color: "#9ca3af",
+    color: theme.text.secondary,
     fontSize: 13,
     fontStyle: "italic",
   },
   reviewTypeContainer: {
-    backgroundColor: "#333",
+    backgroundColor: theme.background.primary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     marginLeft: 8,
   },
   reviewType: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontSize: 12,
     fontWeight: "bold",
   },
-  // Menu modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "flex-start",
     alignItems: "flex-end",
     paddingRight: 20,
-    paddingTop: 100, // Position it below the top bar
+    paddingTop: 100,
   },
   menuContainer: {
-    backgroundColor: "#1E1E1E",
+    backgroundColor: theme.background.secondary,
     borderRadius: 12,
     width: 180,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: theme.background.primary,
   },
   menuItem: {
     flexDirection: "row",
@@ -1033,13 +1052,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.primary,
   },
   menuIcon: {
     marginRight: 12,
   },
   menuText: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 16,
   },
   signOutText: {
@@ -1053,7 +1072,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: theme.text.primary,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "transparent",

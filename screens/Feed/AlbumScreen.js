@@ -21,6 +21,7 @@ import {
   getDocs,
   serverTimestamp,
 } from "firebase/firestore";
+import { theme } from "../../theme/theme";
 
 export default function AlbumScreen({ route, navigation }) {
   const { id, title, artist, imageUri, spotifyUri } = route.params;
@@ -170,7 +171,7 @@ export default function AlbumScreen({ route, navigation }) {
           {formatDuration(item.durationMs)}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#666" />
+      <Ionicons name="chevron-forward" size={20} color={theme.text.secondary} />
     </TouchableOpacity>
   );
 
@@ -182,7 +183,7 @@ export default function AlbumScreen({ route, navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Album Details</Text>
         <View style={styles.placeholder} />
@@ -237,7 +238,11 @@ export default function AlbumScreen({ route, navigation }) {
                 })
               }
             >
-              <Ionicons name="create-outline" size={22} color="#fff" />
+              <Ionicons
+                name="create-outline"
+                size={22}
+                color={theme.text.primary}
+              />
             </TouchableOpacity>
             <Text style={styles.userReviewTitle}>My Review</Text>
             <View style={styles.userReviewContent}>
@@ -264,7 +269,7 @@ export default function AlbumScreen({ route, navigation }) {
           {loading ? (
             <ActivityIndicator
               size="large"
-              color="#1DB954"
+              color={theme.button.primary}
               style={styles.loader}
             />
           ) : (
@@ -287,7 +292,7 @@ export default function AlbumScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
   },
   header: {
     flexDirection: "row",
@@ -296,7 +301,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 16,
     paddingBottom: 16,
-    backgroundColor: "#121212",
+    backgroundColor: theme.background.primary,
   },
   backButton: {
     padding: 8,
@@ -304,7 +309,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#fff",
+    color: theme.text.primary,
   },
   placeholder: {
     width: 40,
@@ -316,7 +321,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
   },
   albumCover: {
     width: 120,
@@ -334,7 +339,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   genreTag: {
-    backgroundColor: "#333",
+    backgroundColor: theme.background.secondary,
     borderRadius: 12,
     paddingVertical: 4,
     paddingHorizontal: 8,
@@ -342,30 +347,30 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   genreText: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontSize: 12,
     fontWeight: "bold",
   },
   albumTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#fff",
+    color: theme.text.primary,
     marginBottom: 8,
   },
   albumArtist: {
     fontSize: 16,
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     marginBottom: 8,
   },
   releaseDate: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 14,
     marginBottom: 12,
   },
   userReviewContainer: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
   },
   editReviewIcon: {
     position: "absolute",
@@ -377,11 +382,11 @@ const styles = StyleSheet.create({
   userReviewTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#fff",
+    color: theme.text.primary,
     marginBottom: 12,
   },
   userReviewContent: {
-    backgroundColor: "#1E1E1E",
+    backgroundColor: theme.background.secondary,
     borderRadius: 8,
     padding: 16,
   },
@@ -396,12 +401,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   userReviewText: {
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: 14,
     lineHeight: 20,
   },
   userReviewDate: {
-    color: "#666",
+    color: theme.text.secondary,
     fontSize: 12,
     marginTop: 12,
     textAlign: "right",
@@ -412,7 +417,7 @@ const styles = StyleSheet.create({
   tracksTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#fff",
+    color: theme.text.primary,
     marginBottom: 16,
   },
   trackItem: {
@@ -420,11 +425,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
+    borderBottomColor: theme.background.secondary,
   },
   trackNumber: {
     width: 30,
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 14,
     textAlign: "center",
   },
@@ -436,12 +441,12 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   trackTitle: {
-    color: "#fff",
+    color: theme.text.primary,
     fontSize: 16,
     flex: 1,
   },
   trackDuration: {
-    color: "#b3b3b3",
+    color: theme.text.secondary,
     fontSize: 14,
     marginLeft: 16,
     marginRight: 16,
@@ -450,7 +455,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   emptyText: {
-    color: "#666",
+    color: theme.text.secondary,
     textAlign: "center",
     marginTop: 20,
   },

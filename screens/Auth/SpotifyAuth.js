@@ -15,7 +15,7 @@ import { useAuthRequest, makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { spotifyConfig } from "../../spotifyConfig";
-import { colors } from "../../theme/colors";
+import { theme } from "../../theme/theme";
 
 // Ensure the redirect works properly with WebBrowser
 WebBrowser.maybeCompleteAuthSession();
@@ -237,7 +237,7 @@ export default function SpotifyAuth() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.button.primary} />
+        <ActivityIndicator size="large" color={theme.button.primary} />
         <Text style={styles.loadingText}>Connecting to Spotify...</Text>
       </View>
     );
@@ -267,22 +267,18 @@ export default function SpotifyAuth() {
           <Ionicons
             name="musical-notes"
             size={24}
-            color={colors.spotify || "#1DB954"}
+            color={theme.button.primary}
           />
           <Text style={styles.featureText}>Share your favorite songs</Text>
         </View>
         <View style={styles.featureItem}>
-          <Ionicons
-            name="people"
-            size={24}
-            color={colors.spotify || "#1DB954"}
-          />
+          <Ionicons name="people" size={24} color={theme.button.primary} />
           <Text style={styles.featureText}>
             See what friends are listening to
           </Text>
         </View>
         <View style={styles.featureItem}>
-          <Ionicons name="disc" size={24} color={colors.spotify || "#1DB954"} />
+          <Ionicons name="disc" size={24} color={theme.button.primary} />
           <Text style={styles.featureText}>Discover new music</Text>
         </View>
       </View>
@@ -304,7 +300,7 @@ export default function SpotifyAuth() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: theme.background.primary,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -313,12 +309,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.background.primary,
+    backgroundColor: theme.background.primary,
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: colors.text.primary,
+    color: theme.text.primary,
   },
   headerContainer: {
     alignItems: "center",
@@ -327,12 +323,12 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 26,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
     marginBottom: 10,
   },
   subHeaderText: {
     fontSize: 16,
-    color: colors.text.secondary,
+    color: theme.text.secondary,
     textAlign: "center",
   },
   spotifyLogoContainer: {
@@ -350,7 +346,7 @@ const styles = StyleSheet.create({
   featuresHeader: {
     fontSize: 18,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
     marginBottom: 15,
   },
   featureItem: {
@@ -360,11 +356,11 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 16,
-    color: colors.text.primary,
+    color: theme.text.primary,
     marginLeft: 10,
   },
   connectButton: {
-    backgroundColor: colors.spotify || "#1DB954", // Spotify green as fallback
+    backgroundColor: theme.button.primary,
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 25,
@@ -373,7 +369,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   connectButtonText: {
-    color: "white",
+    color: theme.text.primary,
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -381,7 +377,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   skipButtonText: {
-    color: colors.text.secondary,
+    color: theme.text.secondary,
     fontSize: 16,
   },
 });

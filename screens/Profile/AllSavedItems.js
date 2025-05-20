@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { colors } from "../../theme/colors";
+import { theme } from "../../theme/theme";
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -63,7 +63,7 @@ export default function AllSavedItems({ route, navigation }) {
         </View>
       </View>
       <View style={styles.itemActions}>
-        <Ionicons name="heart" size={24} color="#1DB954" />
+        <Ionicons name="heart" size={24} color={theme.button.primary} />
       </View>
     </TouchableOpacity>
   );
@@ -75,7 +75,7 @@ export default function AllSavedItems({ route, navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My List</Text>
         <View style={{ width: 24 }} />
@@ -90,7 +90,11 @@ export default function AllSavedItems({ route, navigation }) {
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Ionicons name="heart-outline" size={64} color="#666" />
+          <Ionicons
+            name="heart-outline"
+            size={64}
+            color={theme.text.secondary}
+          />
           <Text style={styles.emptyText}>No saved items yet</Text>
           <TouchableOpacity
             style={styles.browseButton}
@@ -107,7 +111,7 @@ export default function AllSavedItems({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: theme.background.primary,
   },
   header: {
     flexDirection: "row",
@@ -116,7 +120,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: theme.background.secondary,
   },
   backButton: {
     padding: 8,
@@ -124,14 +128,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
   },
   listContent: {
     padding: 16,
   },
   itemContainer: {
     flexDirection: "row",
-    backgroundColor: colors.background.tertiary,
+    backgroundColor: theme.background.secondary,
     borderRadius: 8,
     marginBottom: 12,
     padding: 12,
@@ -149,23 +153,23 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
     marginBottom: 4,
   },
   itemArtist: {
     fontSize: 14,
-    color: colors.text.secondary,
+    color: theme.text.secondary,
     marginBottom: 6,
   },
   itemTypeContainer: {
-    backgroundColor: "#333",
+    backgroundColor: theme.background.primary,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
     alignSelf: "flex-start",
   },
   itemType: {
-    color: "#1DB954",
+    color: theme.button.primary,
     fontSize: 12,
     fontWeight: "500",
   },
@@ -179,19 +183,19 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    color: colors.text.secondary,
+    color: theme.text.secondary,
     fontSize: 16,
     marginTop: 16,
     marginBottom: 24,
   },
   browseButton: {
-    backgroundColor: "#1DB954",
+    backgroundColor: theme.button.primary,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 24,
   },
   browseButtonText: {
-    color: "white",
+    color: theme.text.primary,
     fontWeight: "bold",
     fontSize: 16,
   },

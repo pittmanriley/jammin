@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { colors } from "../../theme/colors";
+import { theme } from "../../theme/theme";
 
 const windowWidth = Dimensions.get("window").width;
 const numColumns = 2;
@@ -25,7 +25,7 @@ export default function AllAlbums({ route, navigation }) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>All Albums</Text>
         <View style={{ width: 24 }} />
@@ -69,7 +69,7 @@ export default function AllAlbums({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.primary,
+    backgroundColor: theme.background.primary,
   },
   header: {
     flexDirection: "row",
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: colors.background.secondary,
+    backgroundColor: theme.background.secondary,
   },
   backButton: {
     padding: 8,
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
   },
   listContent: {
     padding: 16,
@@ -105,11 +105,11 @@ const styles = StyleSheet.create({
   albumTitle: {
     fontSize: 14,
     fontWeight: "bold",
-    color: colors.text.primary,
+    color: theme.text.primary,
     marginBottom: 4,
   },
   albumArtist: {
     fontSize: 12,
-    color: colors.text.secondary,
+    color: theme.text.secondary,
   },
 });

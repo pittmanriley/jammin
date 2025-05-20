@@ -11,11 +11,11 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { useAuthRequest, makeRedirectUri } from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
+import { useAuthRequest, makeRedirectUri } from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { spotifyConfig } from "../spotifyConfig";
-import { colors } from "../theme/colors";
+import { spotifyConfig } from "../../spotifyConfig";
+import { colors } from "../../theme/colors";
 
 // Ensure the redirect works properly with WebBrowser
 WebBrowser.maybeCompleteAuthSession();
@@ -29,14 +29,14 @@ export default function SpotifyAuth() {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
   const navigation = useNavigation();
-  
+
   // Generate a redirect URI using expo-auth-session's helper
   const redirectUri = makeRedirectUri({
     useProxy: true,
   });
-  
-  console.log('Generated redirect URI:', redirectUri);
-  
+
+  console.log("Generated redirect URI:", redirectUri);
+
   // Set up the auth request using useAuthRequest hook
   const [request, response, promptAsync] = useAuthRequest(
     {
@@ -55,20 +55,20 @@ export default function SpotifyAuth() {
   useEffect(() => {
     checkSpotifyConnection();
   }, []);
-  
+
   // Handle the response from the authentication request
   useEffect(() => {
-    if (response?.type === 'success' && response.params.code) {
+    if (response?.type === "success" && response.params.code) {
       const { code } = response.params;
-      console.log('Received auth code, length:', code.length);
-      
+      console.log("Received auth code, length:", code.length);
+
       // Exchange the code for an access token
       exchangeCodeForToken(code);
-    } else if (response?.type === 'error') {
-      console.error('Authentication error:', response.error);
+    } else if (response?.type === "error") {
+      console.error("Authentication error:", response.error);
       Alert.alert(
-        'Authentication Error', 
-        'There was a problem connecting to Spotify.'
+        "Authentication Error",
+        "There was a problem connecting to Spotify."
       );
       setLoading(false);
     }
@@ -80,13 +80,13 @@ export default function SpotifyAuth() {
   const checkSpotifyConnection = async () => {
     try {
       setLoading(true);
-      
+
       // Get the access token from secure storage
       const accessToken = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
-      
+
       if (accessToken) {
-        console.log('Found access token, checking if it works...');
-        
+        console.log("Found access token, checking if it works...");
+
         try {
           // Test the token by fetching user profile
           const response = await fetch("https://api.spotify.com/v1/me", {
@@ -94,25 +94,25 @@ export default function SpotifyAuth() {
               Authorization: `Bearer ${accessToken}`,
             },
           });
-          
+
           if (response.ok) {
-            console.log('Spotify connection confirmed');
+            console.log("Spotify connection confirmed");
             // Successfully verified the token works
             navigation.replace("MainTabs");
             return;
           } else {
-            console.log('Access token expired or invalid');
+            console.log("Access token expired or invalid");
             // Token is invalid, clear it
             await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
           }
         } catch (error) {
-          console.error('Error verifying access token:', error);
+          console.error("Error verifying access token:", error);
           // Clear the invalid token
           await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
         }
       }
-      
-      console.log('No active Spotify connection, showing connect screen');
+
+      console.log("No active Spotify connection, showing connect screen");
       setLoading(false);
     } catch (error) {
       console.error("Error checking Spotify connection:", error);
@@ -126,56 +126,64 @@ export default function SpotifyAuth() {
   const exchangeCodeForToken = async (code) => {
     try {
       if (!request?.codeVerifier) {
-        throw new Error('No code verifier available. This is required for PKCE flow.');
+        throw new Error(
+          "No code verifier available. This is required for PKCE flow."
+        );
       }
-      
+
       setLoading(true);
-      console.log('Exchanging authorization code for token...');
-      
+      console.log("Exchanging authorization code for token...");
+
       // Create the body for the token request
       const tokenRequestBody = new URLSearchParams({
-        grant_type: 'authorization_code',
+        grant_type: "authorization_code",
         code,
         redirect_uri: redirectUri,
         client_id: spotifyConfig.clientId,
         // This is the critical parameter that was missing!
         code_verifier: request.codeVerifier,
       });
-      
-      console.log('Using code_verifier from PKCE flow');
-      console.log('Token request params:', tokenRequestBody.toString().substring(0, 100) + '...');
-      console.log('Using redirect URI:', redirectUri);
-      
+
+      console.log("Using code_verifier from PKCE flow");
+      console.log(
+        "Token request params:",
+        tokenRequestBody.toString().substring(0, 100) + "..."
+      );
+      console.log("Using redirect URI:", redirectUri);
+
       // Make the token exchange request
-      const response = await fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
+      const response = await fetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: tokenRequestBody.toString(),
       });
-      
+
       const responseText = await response.text();
-      console.log('Token response status:', response.status);
-      
+      console.log("Token response status:", response.status);
+
       if (!response.ok) {
-        console.error('Token exchange error:', responseText);
+        console.error("Token exchange error:", responseText);
         throw new Error(`Token exchange failed: ${responseText}`);
       }
-      
+
       // Parse the JSON response
       const tokenData = JSON.parse(responseText);
-      console.log('Token exchange successful!');
-      
+      console.log("Token exchange successful!");
+
       // Store tokens in secure storage
       await storeTokenData(tokenData);
-      
+
       // Navigate to the main app
-      navigation.replace('MainTabs');
+      navigation.replace("MainTabs");
     } catch (error) {
-      console.error('Error in token exchange:', error);
+      console.error("Error in token exchange:", error);
       setLoading(false);
-      Alert.alert('Authentication Error', 'Failed to complete Spotify authentication. Please try again.');
+      Alert.alert(
+        "Authentication Error",
+        "Failed to complete Spotify authentication. Please try again."
+      );
     }
   };
 
@@ -185,22 +193,22 @@ export default function SpotifyAuth() {
   const storeTokenData = async (tokenData) => {
     try {
       const { access_token, refresh_token, expires_in } = tokenData;
-      
+
       // Calculate expiry time
       const expiryTime = new Date().getTime() + expires_in * 1000;
-      
+
       // Store tokens securely
       await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, access_token);
-      
+
       if (refresh_token) {
         await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refresh_token);
       }
-      
+
       await SecureStore.setItemAsync(TOKEN_EXPIRY_KEY, expiryTime.toString());
-      console.log('Tokens stored successfully');
+      console.log("Tokens stored successfully");
       return true;
     } catch (error) {
-      console.error('Error storing tokens:', error);
+      console.error("Error storing tokens:", error);
       return false;
     }
   };
@@ -210,13 +218,13 @@ export default function SpotifyAuth() {
    */
   const handleConnectSpotify = async () => {
     try {
-      console.log('Starting Spotify authentication...');
-      
+      console.log("Starting Spotify authentication...");
+
       // Start the authentication process
       await promptAsync();
     } catch (error) {
-      console.error('Error starting Spotify auth:', error);
-      Alert.alert('Error', 'Failed to connect to Spotify. Please try again.');
+      console.error("Error starting Spotify auth:", error);
+      Alert.alert("Error", "Failed to connect to Spotify. Please try again.");
     }
   };
 
@@ -247,7 +255,7 @@ export default function SpotifyAuth() {
 
       <View style={styles.spotifyLogoContainer}>
         <Image
-          source={require("../assets/spotify-logo.png")}
+          source={require("../../assets/spotify-logo.png")}
           style={styles.spotifyLogo}
           resizeMode="contain"
         />
@@ -256,12 +264,22 @@ export default function SpotifyAuth() {
       <View style={styles.featuresContainer}>
         <Text style={styles.featuresHeader}>You'll be able to:</Text>
         <View style={styles.featureItem}>
-          <Ionicons name="musical-notes" size={24} color={colors.spotify || "#1DB954"} />
+          <Ionicons
+            name="musical-notes"
+            size={24}
+            color={colors.spotify || "#1DB954"}
+          />
           <Text style={styles.featureText}>Share your favorite songs</Text>
         </View>
         <View style={styles.featureItem}>
-          <Ionicons name="people" size={24} color={colors.spotify || "#1DB954"} />
-          <Text style={styles.featureText}>See what friends are listening to</Text>
+          <Ionicons
+            name="people"
+            size={24}
+            color={colors.spotify || "#1DB954"}
+          />
+          <Text style={styles.featureText}>
+            See what friends are listening to
+          </Text>
         </View>
         <View style={styles.featureItem}>
           <Ionicons name="disc" size={24} color={colors.spotify || "#1DB954"} />
@@ -276,10 +294,7 @@ export default function SpotifyAuth() {
         <Text style={styles.connectButtonText}>Connect with Spotify</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.skipButton}
-        onPress={handleSkip}
-      >
+      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
         <Text style={styles.skipButtonText}>Skip for now</Text>
       </TouchableOpacity>
     </View>

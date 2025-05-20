@@ -13,8 +13,8 @@ import {
   Platform,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { searchSpotify, isSpotifyConnected } from "../services/spotifyService";
-import { auth, db } from "../firebaseConfig";
+import { searchSpotify, isSpotifyConnected } from "../../services/spotifyService";
+import { auth, db } from "../../firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export default function LeaveReview({ route, navigation }) {

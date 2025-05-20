@@ -13,7 +13,7 @@ import {
   Alert,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { searchSpotify, isSpotifyConnected } from "../services/spotifyService";
+import { searchSpotify, isSpotifyConnected } from "../../services/spotifyService";
 
 export default function NewPost({ navigation }) {
   const [query, setQuery] = useState("");

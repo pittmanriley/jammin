@@ -13,7 +13,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import {
   getUserListeningStats,
   isSpotifyConnected,
-} from "../services/spotifyService";
+} from "../../services/spotifyService";
 
 const windowWidth = Dimensions.get("window").width;
 

@@ -9,8 +9,8 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { colors } from "../theme/colors";
-import { auth, db } from "../firebaseConfig";
+import { colors } from "../../theme/colors";
+import { auth, db } from "../../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 

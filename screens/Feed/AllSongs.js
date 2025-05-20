@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { colors } from "../theme/colors";
+import { colors } from "../../theme/colors";
 
 export default function AllSongs({ route, navigation }) {
   const { songs } = route.params;

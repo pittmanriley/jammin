@@ -11,58 +11,71 @@ import {
   Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { auth, db } from "../firebaseConfig";
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, getDoc, setDoc } from "firebase/firestore";
-import { getTrackDetails, getArtist } from "../services/spotifyService";
+import { auth, db } from "../../firebaseConfig";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
+  arrayUnion,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
+import { getTrackDetails, getArtist } from "../../services/spotifyService";
 import { useRoute } from "@react-navigation/native";
 
 export default function InfoScreen({ route, navigation }) {
-  const { id, title, artist, imageUri, type, spotifyUri, albumId, albumTitle } = route.params;
-  
+  const { id, title, artist, imageUri, type, spotifyUri, albumId, albumTitle } =
+    route.params;
+
   const [userReview, setUserReview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [genres, setGenres] = useState([]);
   const [isSaved, setIsSaved] = useState(false);
   const [savingItem, setSavingItem] = useState(false);
-  
+
   useEffect(() => {
     fetchUserReview();
     fetchTrackDetails();
     checkIfItemIsSaved();
   }, []);
-  
+
   const checkIfItemIsSaved = async () => {
     try {
       const user = auth.currentUser;
       if (!user) return;
-      
-      const userRef = doc(db, 'users', user.uid);
+
+      const userRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userRef);
-      
+
       if (userDoc.exists()) {
         const userData = userDoc.data();
         if (userData.savedItems && Array.isArray(userData.savedItems)) {
-          const isItemSaved = userData.savedItems.some(item => item.id === id);
+          const isItemSaved = userData.savedItems.some(
+            (item) => item.id === id
+          );
           setIsSaved(isItemSaved);
         }
       }
     } catch (error) {
-      console.error('Error checking if item is saved:', error);
+      console.error("Error checking if item is saved:", error);
     }
   };
-  
+
   const handleSaveItem = async () => {
     try {
       setSavingItem(true);
       const user = auth.currentUser;
       if (!user) {
-        Alert.alert('Error', 'You need to be logged in to save items');
+        Alert.alert("Error", "You need to be logged in to save items");
         return;
       }
-      
-      const userRef = doc(db, 'users', user.uid);
+
+      const userRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userRef);
-      
+
       const itemData = {
         id,
         title,
@@ -70,17 +83,19 @@ export default function InfoScreen({ route, navigation }) {
         imageUri,
         type,
         spotifyUri,
-        savedAt: new Date().toISOString()
+        savedAt: new Date().toISOString(),
       };
-      
+
       if (userDoc.exists()) {
         const userData = userDoc.data();
         let updatedSavedItems = [];
-        
+
         if (userData.savedItems && Array.isArray(userData.savedItems)) {
           // Check if item is already saved
-          const existingIndex = userData.savedItems.findIndex(item => item.id === id);
-          
+          const existingIndex = userData.savedItems.findIndex(
+            (item) => item.id === id
+          );
+
           if (existingIndex >= 0) {
             // Item exists, remove it
             updatedSavedItems = [...userData.savedItems];
@@ -96,144 +111,159 @@ export default function InfoScreen({ route, navigation }) {
           updatedSavedItems = [itemData];
           setIsSaved(true);
         }
-        
+
         // Update the document
         await updateDoc(userRef, {
-          savedItems: updatedSavedItems
+          savedItems: updatedSavedItems,
         });
       } else {
         // Create user document if it doesn't exist
         await setDoc(userRef, {
           email: user.email,
-          displayName: user.displayName || 'User',
+          displayName: user.displayName || "User",
           savedItems: [itemData],
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
         });
         setIsSaved(true);
       }
     } catch (error) {
-      console.error('Error saving item:', error);
-      Alert.alert('Error', 'Failed to save item. Please try again.');
+      console.error("Error saving item:", error);
+      Alert.alert("Error", "Failed to save item. Please try again.");
     } finally {
       setSavingItem(false);
     }
   };
-  
+
   const openInSpotify = () => {
     if (spotifyUri) {
-      Linking.canOpenURL(spotifyUri).then(supported => {
-        if (supported) {
-          // Try to open in Spotify app
-          Linking.openURL(spotifyUri);
-        } else {
-          // If Spotify app is not installed, open in web browser
-          let webUrl;
-          
-          if (spotifyUri.includes('spotify:track:')) {
-            // Format for tracks: spotify:track:5ch484wWUkTPp6saoxACAN -> https://open.spotify.com/track/5ch484wWUkTPp6saoxACAN
-            const trackId = spotifyUri.split('spotify:track:')[1];
-            webUrl = `https://open.spotify.com/track/${trackId}`;
-          } else if (spotifyUri.includes('spotify:album:')) {
-            // Format for albums: spotify:album:4StaOoKvc1slai3SMaOhCZ -> https://open.spotify.com/album/4StaOoKvc1slai3SMaOhCZ
-            const albumId = spotifyUri.split('spotify:album:')[1];
-            webUrl = `https://open.spotify.com/album/${albumId}`;
-          } else if (spotifyUri.includes('spotify:artist:')) {
-            // Format for artists: spotify:artist:123456 -> https://open.spotify.com/artist/123456
-            const artistId = spotifyUri.split('spotify:artist:')[1];
-            webUrl = `https://open.spotify.com/artist/${artistId}`;
+      Linking.canOpenURL(spotifyUri)
+        .then((supported) => {
+          if (supported) {
+            // Try to open in Spotify app
+            Linking.openURL(spotifyUri);
           } else {
-            // Fallback for other types
-            webUrl = spotifyUri.replace('spotify:', 'https://open.spotify.com/').replace(/:/g, '/');
+            // If Spotify app is not installed, open in web browser
+            let webUrl;
+
+            if (spotifyUri.includes("spotify:track:")) {
+              // Format for tracks: spotify:track:5ch484wWUkTPp6saoxACAN -> https://open.spotify.com/track/5ch484wWUkTPp6saoxACAN
+              const trackId = spotifyUri.split("spotify:track:")[1];
+              webUrl = `https://open.spotify.com/track/${trackId}`;
+            } else if (spotifyUri.includes("spotify:album:")) {
+              // Format for albums: spotify:album:4StaOoKvc1slai3SMaOhCZ -> https://open.spotify.com/album/4StaOoKvc1slai3SMaOhCZ
+              const albumId = spotifyUri.split("spotify:album:")[1];
+              webUrl = `https://open.spotify.com/album/${albumId}`;
+            } else if (spotifyUri.includes("spotify:artist:")) {
+              // Format for artists: spotify:artist:123456 -> https://open.spotify.com/artist/123456
+              const artistId = spotifyUri.split("spotify:artist:")[1];
+              webUrl = `https://open.spotify.com/artist/${artistId}`;
+            } else {
+              // Fallback for other types
+              webUrl = spotifyUri
+                .replace("spotify:", "https://open.spotify.com/")
+                .replace(/:/g, "/");
+            }
+
+            console.log("Opening Spotify web URL:", webUrl);
+            Linking.openURL(webUrl);
           }
-          
-          console.log('Opening Spotify web URL:', webUrl);
+        })
+        .catch((err) => {
+          console.error("Error checking if can open URL:", err);
+          // Fallback to web URL if there's an error
+          const trackId =
+            spotifyUri.split("spotify:track:")[1] ||
+            spotifyUri.split("spotify:album:")[1];
+          const webUrl = `https://open.spotify.com/${type}/${trackId}`;
           Linking.openURL(webUrl);
-        }
-      }).catch(err => {
-        console.error('Error checking if can open URL:', err);
-        // Fallback to web URL if there's an error
-        const trackId = spotifyUri.split('spotify:track:')[1] || spotifyUri.split('spotify:album:')[1];
-        const webUrl = `https://open.spotify.com/${type}/${trackId}`;
-        Linking.openURL(webUrl);
-      });
+        });
     } else {
-      Alert.alert('Error', 'Spotify link not available for this item');
+      Alert.alert("Error", "Spotify link not available for this item");
     }
   };
-  
+
   const fetchTrackDetails = async () => {
     try {
-      if (type === 'track') {
+      if (type === "track") {
         const trackDetails = await getTrackDetails(id);
-        
+
         // Get artist details to fetch genres
-        if (trackDetails && trackDetails.artists && trackDetails.artists.length > 0) {
+        if (
+          trackDetails &&
+          trackDetails.artists &&
+          trackDetails.artists.length > 0
+        ) {
           const artistId = trackDetails.artists[0].id;
           const artistDetails = await getArtist(artistId);
-          
+
           if (artistDetails && artistDetails.genres) {
             setGenres(artistDetails.genres);
           }
         }
       }
     } catch (error) {
-      console.error('Error fetching track details:', error);
+      console.error("Error fetching track details:", error);
     }
   };
-  
+
   const fetchUserReview = async () => {
     try {
       setLoading(true);
       const user = auth.currentUser;
       if (!user) return;
-      
-      const reviewsRef = collection(db, 'reviews');
+
+      const reviewsRef = collection(db, "reviews");
       const q = query(
-        reviewsRef, 
-        where('userId', '==', user.uid),
-        where('itemId', '==', id),
-        where('itemType', '==', type)
+        reviewsRef,
+        where("userId", "==", user.uid),
+        where("itemId", "==", id),
+        where("itemType", "==", type)
       );
-      
+
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
         const reviewData = querySnapshot.docs[0].data();
         setUserReview(reviewData);
       }
     } catch (error) {
-      console.error('Error fetching user review:', error);
+      console.error("Error fetching user review:", error);
     } finally {
       setLoading(false);
     }
   };
-  
+
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
-    
+
     // Full stars
     for (let i = 0; i < fullStars; i++) {
       stars.push(
         <Ionicons key={`full-${i}`} name="star" size={20} color="#FFD700" />
       );
     }
-    
+
     // Half star
     if (hasHalfStar) {
       stars.push(
         <Ionicons key="half" name="star-half" size={20} color="#FFD700" />
       );
     }
-    
+
     // Empty stars
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
     for (let i = 0; i < emptyStars; i++) {
       stars.push(
-        <Ionicons key={`empty-${i}`} name="star-outline" size={20} color="#FFD700" />
+        <Ionicons
+          key={`empty-${i}`}
+          name="star-outline"
+          size={20}
+          color="#FFD700"
+        />
       );
     }
-    
+
     return stars;
   };
 
@@ -265,7 +295,7 @@ export default function InfoScreen({ route, navigation }) {
             {albumTitle && (
               <Text style={styles.albumTitle}>From: {albumTitle}</Text>
             )}
-            
+
             {/* Display genres if available */}
             {genres.length > 0 && (
               <View style={styles.genresContainer}>
@@ -277,29 +307,43 @@ export default function InfoScreen({ route, navigation }) {
               </View>
             )}
           </View>
-          <Image 
-            source={imageUri ? { uri: imageUri } : require("../assets/babydoll.jpeg")} 
-            style={styles.coverArt} 
+          <Image
+            source={
+              imageUri
+                ? { uri: imageUri }
+                : require("../../assets/babydoll.jpeg")
+            }
+            style={styles.coverArt}
           />
         </View>
 
         {/* User's Review (if exists) */}
         {loading ? (
-          <ActivityIndicator size="small" color="#1DB954" style={styles.loader} />
-        ) : userReview && (
-          <View style={styles.userReviewContainer}>
-            <Text style={styles.userReviewTitle}>My Review</Text>
-            <View style={styles.userReviewContent}>
-              <View style={styles.starsContainer}>
-                {renderStars(userReview.rating)}
-                <Text style={styles.ratingText}>{userReview.rating.toFixed(1)}</Text>
+          <ActivityIndicator
+            size="small"
+            color="#1DB954"
+            style={styles.loader}
+          />
+        ) : (
+          userReview && (
+            <View style={styles.userReviewContainer}>
+              <Text style={styles.userReviewTitle}>My Review</Text>
+              <View style={styles.userReviewContent}>
+                <View style={styles.starsContainer}>
+                  {renderStars(userReview.rating)}
+                  <Text style={styles.ratingText}>
+                    {userReview.rating.toFixed(1)}
+                  </Text>
+                </View>
+                <Text style={styles.userReviewText}>{userReview.review}</Text>
+                <Text style={styles.userReviewDate}>
+                  {new Date(
+                    userReview.createdAt.seconds * 1000
+                  ).toLocaleDateString()}
+                </Text>
               </View>
-              <Text style={styles.userReviewText}>{userReview.review}</Text>
-              <Text style={styles.userReviewDate}>
-                {new Date(userReview.createdAt.seconds * 1000).toLocaleDateString()}
-              </Text>
             </View>
-          </View>
+          )
         )}
 
         {/* Friend Reviews */}
@@ -330,7 +374,7 @@ export default function InfoScreen({ route, navigation }) {
                   name={i < 4 ? "star" : "star-outline"}
                   size={24}
                   color={i < 4 ? "#FFD700" : "#444"}
-                  style={{marginRight: 5}}
+                  style={{ marginRight: 5 }}
                 />
               ))}
           </View>
@@ -341,33 +385,39 @@ export default function InfoScreen({ route, navigation }) {
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.navigate("LeaveReview", { 
-              song: {
-                id: id,
-                name: title,
-                artist: artist,
-                imageUri: imageUri,
-                spotifyUri: spotifyUri,
-                type: type
-              }
-            })}
+            onPress={() =>
+              navigation.navigate("LeaveReview", {
+                song: {
+                  id: id,
+                  name: title,
+                  artist: artist,
+                  imageUri: imageUri,
+                  spotifyUri: spotifyUri,
+                  type: type,
+                },
+              })
+            }
           >
             <Ionicons name="create-outline" size={20} color="white" />
-            <Text style={styles.buttonText}>{userReview ? 'Edit Review' : 'Leave Review'}</Text>
+            <Text style={styles.buttonText}>
+              {userReview ? "Edit Review" : "Leave Review"}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.button} 
+          <TouchableOpacity
+            style={styles.button}
             onPress={handleSaveItem}
             disabled={savingItem}
           >
-            <Ionicons 
-              name={isSaved ? "heart" : "heart-outline"} 
-              size={20} 
-              color={isSaved ? "#1DB954" : "white"} 
+            <Ionicons
+              name={isSaved ? "heart" : "heart-outline"}
+              size={20}
+              color={isSaved ? "#1DB954" : "white"}
             />
-            <Text style={[styles.buttonText, isSaved && styles.savedButtonText]}>
-              {savingItem ? "Saving..." : (isSaved ? "Saved" : "Save")}
+            <Text
+              style={[styles.buttonText, isSaved && styles.savedButtonText]}
+            >
+              {savingItem ? "Saving..." : isSaved ? "Saved" : "Save"}
             </Text>
           </TouchableOpacity>
 

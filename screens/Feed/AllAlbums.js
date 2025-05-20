@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { colors } from "../theme/colors";
+import { colors } from "../../theme/colors";
 
 const windowWidth = Dimensions.get("window").width;
 const numColumns = 2;

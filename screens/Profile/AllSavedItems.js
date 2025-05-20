@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { colors } from "../theme/colors";
+import { colors } from "../../theme/colors";
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -42,7 +42,11 @@ export default function AllSavedItems({ route, navigation }) {
       }}
     >
       <Image
-        source={item.imageUri ? { uri: item.imageUri } : require("../assets/babydoll.jpeg")}
+        source={
+          item.imageUri
+            ? { uri: item.imageUri }
+            : require("../../assets/babydoll.jpeg")
+        }
         style={styles.itemImage}
       />
       <View style={styles.itemDetails}>

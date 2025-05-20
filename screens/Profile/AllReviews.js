@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { colors } from "../theme/colors";
+import { colors } from "../../theme/colors";
 
 export default function AllReviews({ route, navigation }) {
   const { reviews } = route.params;
@@ -33,29 +33,33 @@ export default function AllReviews({ route, navigation }) {
               key={review.id}
               style={styles.reviewItem}
               onPress={() => {
-                if (review.itemType === 'album') {
-                  navigation.navigate('AlbumScreen', {
+                if (review.itemType === "album") {
+                  navigation.navigate("AlbumScreen", {
                     id: review.itemId,
                     title: review.itemTitle,
                     artist: review.itemArtist,
                     imageUri: review.itemImageUri,
-                    spotifyUri: review.itemSpotifyUri
+                    spotifyUri: review.itemSpotifyUri,
                   });
                 } else {
-                  navigation.navigate('Info', {
+                  navigation.navigate("Info", {
                     id: review.itemId,
                     title: review.itemTitle,
                     artist: review.itemArtist,
                     imageUri: review.itemImageUri,
                     type: review.itemType,
-                    spotifyUri: review.itemSpotifyUri
+                    spotifyUri: review.itemSpotifyUri,
                   });
                 }
               }}
             >
-              <Image 
-                source={review.itemImageUri ? { uri: review.itemImageUri } : require("../assets/babydoll.jpeg")} 
-                style={styles.reviewImage} 
+              <Image
+                source={
+                  review.itemImageUri
+                    ? { uri: review.itemImageUri }
+                    : require("../../assets/babydoll.jpeg")
+                }
+                style={styles.reviewImage}
               />
               <View style={styles.reviewContent}>
                 <Text style={styles.reviewTitle}>{review.itemTitle}</Text>
@@ -63,28 +67,39 @@ export default function AllReviews({ route, navigation }) {
                 <View style={styles.reviewRating}>
                   {[1, 2, 3, 4, 5].map((star) => {
                     const fullStar = star <= Math.floor(review.rating);
-                    const halfStar = !fullStar && star === Math.floor(review.rating) + 1 && review.rating % 1 !== 0;
-                    
+                    const halfStar =
+                      !fullStar &&
+                      star === Math.floor(review.rating) + 1 &&
+                      review.rating % 1 !== 0;
+
                     return (
                       <Ionicons
                         key={star}
-                        name={fullStar ? 'star' : halfStar ? 'star-half' : 'star-outline'}
+                        name={
+                          fullStar
+                            ? "star"
+                            : halfStar
+                            ? "star-half"
+                            : "star-outline"
+                        }
                         size={16}
                         color="#FFD700"
                         style={{ marginRight: 2 }}
                       />
                     );
                   })}
-                  <Text style={styles.ratingText}>{review.rating.toFixed(1)}</Text>
+                  <Text style={styles.ratingText}>
+                    {review.rating.toFixed(1)}
+                  </Text>
                 </View>
                 {review.review && (
-                  <Text style={styles.reviewText}>
-                    {review.review}
-                  </Text>
+                  <Text style={styles.reviewText}>{review.review}</Text>
                 )}
               </View>
               <View style={styles.reviewTypeContainer}>
-                <Text style={styles.reviewType}>{review.itemType === 'album' ? 'Album' : 'Song'}</Text>
+                <Text style={styles.reviewType}>
+                  {review.itemType === "album" ? "Album" : "Song"}
+                </Text>
               </View>
             </TouchableOpacity>
           ))

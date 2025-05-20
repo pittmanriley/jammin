@@ -16,10 +16,19 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
-import { auth, db, storage } from "../firebaseConfig";
+import { auth, db, storage } from "../../firebaseConfig";
 import { signOut } from "firebase/auth";
-import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
-import { disconnectSpotify } from "../services/spotifyService";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { disconnectSpotify } from "../../services/spotifyService";
 import * as ImagePicker from "expo-image-picker";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -50,10 +59,10 @@ export default function Profile({ navigation: propNavigation }) {
     loadUserProfile();
     loadUserReviews();
   }, []);
-  
+
   // Add a listener for when the screen comes into focus
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
+    const unsubscribe = navigation.addListener("focus", () => {
       // When the screen is focused, refresh the data
       loadUserProfile();
       loadUserReviews();
@@ -62,38 +71,35 @@ export default function Profile({ navigation: propNavigation }) {
     // Return the cleanup function
     return unsubscribe;
   }, [navigation]);
-  
+
   const loadUserReviews = async () => {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) return;
-      
-      const reviewsRef = collection(db, 'reviews');
-      const q = query(reviewsRef, where('userId', '==', currentUser.uid));
+
+      const reviewsRef = collection(db, "reviews");
+      const q = query(reviewsRef, where("userId", "==", currentUser.uid));
       const querySnapshot = await getDocs(q);
-      
+
       const reviews = [];
       querySnapshot.forEach((doc) => {
         reviews.push({ id: doc.id, ...doc.data() });
       });
-      
+
       // Sort reviews by creation date (newest first)
       reviews.sort((a, b) => {
         return b.createdAt?.seconds - a.createdAt?.seconds;
       });
-      
+
       setUserReviews(reviews);
     } catch (error) {
-      console.error('Error loading user reviews:', error);
+      console.error("Error loading user reviews:", error);
     }
   };
-  
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([
-      loadUserProfile(),
-      loadUserReviews()
-    ]);
+    await Promise.all([loadUserProfile(), loadUserReviews()]);
     setRefreshing(false);
   };
 
@@ -119,7 +125,11 @@ export default function Profile({ navigation: propNavigation }) {
           userData.displayName || currentUser.displayName || "User"
         );
         setBio(userData.bio || "No bio yet");
-        setProfilePicUrl(userData.profilePicUrl || currentUser.photoURL || require('../assets/dummy profile.jpg'));
+        setProfilePicUrl(
+          userData.profilePicUrl ||
+            currentUser.photoURL ||
+            require("../../assets/dummy profile.jpg")
+        );
         setUsername(userData.username || "");
 
         // Get saved items
@@ -169,46 +179,43 @@ export default function Profile({ navigation: propNavigation }) {
       Alert.alert("Error", "Failed to save profile. Please try again.");
     }
   };
-  
+
   const cancelEdit = () => {
     // Reset to original values from the database
     loadUserProfile();
     setEditMode(false);
   };
-  
+
   const confirmSignOut = () => {
     setMenuVisible(false);
-    Alert.alert(
-      "Sign Out",
-      "Are you sure you want to sign out?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Sign Out",
-          style: "destructive",
-          onPress: handleSignOut,
-        },
-      ]
-    );
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: handleSignOut,
+      },
+    ]);
   };
-  
+
   const handleSignOut = async () => {
     try {
       setLoading(true);
       console.log("Starting sign out process...");
-      
+
       // Store a flag to indicate we're signing out completely (not just Spotify)
       try {
-        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-        await AsyncStorage.setItem('complete_signout', 'true');
-        console.log('Set complete_signout flag in AsyncStorage');
+        const AsyncStorage =
+          require("@react-native-async-storage/async-storage").default;
+        await AsyncStorage.setItem("complete_signout", "true");
+        console.log("Set complete_signout flag in AsyncStorage");
       } catch (storageError) {
-        console.error('Error setting signout flag:', storageError);
+        console.error("Error setting signout flag:", storageError);
       }
-      
+
       // Disconnect from Spotify first
       try {
         await disconnectSpotify();
@@ -217,11 +224,11 @@ export default function Profile({ navigation: propNavigation }) {
         console.error("Error disconnecting from Spotify:", spotifyError);
         // Continue with sign out even if Spotify disconnect fails
       }
-      
+
       // Sign out from Firebase
       await signOut(auth);
       console.log("Successfully signed out from Firebase");
-      
+
       // Navigate to Login screen instead of SpotifyAuth
       navigation.reset({
         index: 0,
@@ -300,7 +307,7 @@ export default function Profile({ navigation: propNavigation }) {
       return item.image;
     } else {
       // Return a default image from assets
-      return require("../assets/babydoll.jpeg");
+      return require("../../assets/babydoll.jpeg");
     }
   };
 
@@ -319,13 +326,13 @@ export default function Profile({ navigation: propNavigation }) {
             style={styles.imageWrapper}
             onPress={() => {
               if (item.id) {
-                if (item.type === 'album') {
+                if (item.type === "album") {
                   navigation.navigate("AlbumScreen", {
                     id: item.id,
                     title: item.title,
                     artist: item.artist,
                     imageUri: item.imageUri,
-                    spotifyUri: item.spotifyUri
+                    spotifyUri: item.spotifyUri,
                   });
                 } else {
                   navigation.navigate("Info", {
@@ -365,35 +372,44 @@ export default function Profile({ navigation: propNavigation }) {
         animationType="fade"
         onRequestClose={() => setMenuVisible(false)}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
           onPress={() => setMenuVisible(false)}
         >
           <View style={styles.menuContainer}>
-            <TouchableOpacity 
-              style={styles.menuItem} 
+            <TouchableOpacity
+              style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
                 setEditMode(true);
               }}
             >
-              <Ionicons name="create-outline" size={22} color="white" style={styles.menuIcon} />
+              <Ionicons
+                name="create-outline"
+                size={22}
+                color="white"
+                style={styles.menuIcon}
+              />
               <Text style={styles.menuText}>Edit Profile</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.menuItem} 
-              onPress={confirmSignOut}
-            >
-              <Ionicons name="log-out-outline" size={22} color="#ff6b6b" style={styles.menuIcon} />
-              <Text style={[styles.menuText, styles.signOutText]}>Sign Out</Text>
+
+            <TouchableOpacity style={styles.menuItem} onPress={confirmSignOut}>
+              <Ionicons
+                name="log-out-outline"
+                size={22}
+                color="#ff6b6b"
+                style={styles.menuIcon}
+              />
+              <Text style={[styles.menuText, styles.signOutText]}>
+                Sign Out
+              </Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.container}
         refreshControl={
           <RefreshControl
@@ -402,17 +418,24 @@ export default function Profile({ navigation: propNavigation }) {
             colors={["#1DB954"]}
             tintColor={"#1DB954"}
           />
-        }>
+        }
+      >
         <View style={styles.topBar}>
           {/* Stats Icon */}
-          <TouchableOpacity style={styles.statsButton} onPress={() => navigation.navigate("Stats")}>
+          <TouchableOpacity
+            style={styles.statsButton}
+            onPress={() => navigation.navigate("Stats")}
+          >
             <Ionicons name="stats-chart-outline" size={24} color="white" />
           </TouchableOpacity>
-          
+
           {/* Edit/Save Button */}
           {editMode ? (
             <View style={styles.editButtonsContainer}>
-              <TouchableOpacity style={styles.cancelButton} onPress={cancelEdit}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={cancelEdit}
+              >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
@@ -420,229 +443,255 @@ export default function Profile({ navigation: propNavigation }) {
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
+            <TouchableOpacity
+              style={styles.menuButton}
+              onPress={() => setMenuVisible(true)}
+            >
               <Ionicons name="ellipsis-vertical" size={24} color="white" />
             </TouchableOpacity>
           )}
         </View>
-      
-      <View style={styles.usernameContainer}>
-        <Text style={styles.usernameText}>
-          {username ? `@${username}` : "Profile"}
-        </Text>
-      </View>
 
-      {/* Profile Picture */}
-      <TouchableOpacity
-        style={styles.profilePicWrapper}
-        onPress={editMode ? pickImage : null}
-        disabled={!editMode}
-      >
-        {uploadingImage ? (
-          <View style={[styles.profilePic, styles.uploadingContainer]}>
-            <ActivityIndicator size="small" color="#1DB954" />
-          </View>
-        ) : (
-          <>
-            <Image
-              source={
-                profilePicUrl
-                  ? { uri: profilePicUrl }
-                  : { uri: "https://via.placeholder.com/120?text=Profile" }
-              }
-              style={styles.profilePic}
-            />
-            {editMode && (
-              <View style={styles.editProfilePicOverlay}>
-                <Ionicons name="camera" size={24} color="white" />
-              </View>
-            )}
-          </>
-        )}
-      </TouchableOpacity>
+        <View style={styles.usernameContainer}>
+          <Text style={styles.usernameText}>
+            {username ? `@${username}` : "Profile"}
+          </Text>
+        </View>
 
-      {/* User Name */}
-      {editMode ? (
-        <TextInput
-          style={styles.editNameInput}
-          value={displayName}
-          onChangeText={setDisplayName}
-          placeholder="Your name"
-          placeholderTextColor="#9ca3af"
-        />
-      ) : (
-        <Text style={styles.username}>{displayName}</Text>
-      )}
-      
-      {/* Username */}
-      {editMode ? (
-        <View style={styles.usernameInputContainer}>
-          <Text style={styles.usernamePrefix}>@</Text>
+        {/* Profile Picture */}
+        <TouchableOpacity
+          style={styles.profilePicWrapper}
+          onPress={editMode ? pickImage : null}
+          disabled={!editMode}
+        >
+          {uploadingImage ? (
+            <View style={[styles.profilePic, styles.uploadingContainer]}>
+              <ActivityIndicator size="small" color="#1DB954" />
+            </View>
+          ) : (
+            <>
+              <Image
+                source={
+                  profilePicUrl
+                    ? { uri: profilePicUrl }
+                    : { uri: "https://via.placeholder.com/120?text=Profile" }
+                }
+                style={styles.profilePic}
+              />
+              {editMode && (
+                <View style={styles.editProfilePicOverlay}>
+                  <Ionicons name="camera" size={24} color="white" />
+                </View>
+              )}
+            </>
+          )}
+        </TouchableOpacity>
+
+        {/* User Name */}
+        {editMode ? (
           <TextInput
-            style={styles.usernameInput}
-            value={username}
-            onChangeText={setUsername}
-            placeholder="username"
+            style={styles.editNameInput}
+            value={displayName}
+            onChangeText={setDisplayName}
+            placeholder="Your name"
             placeholderTextColor="#9ca3af"
           />
-        </View>
-      ) : null}
-
-      {/* User Bio */}
-      {editMode ? (
-        <TextInput
-          style={styles.editBioInput}
-          value={bio}
-          onChangeText={setBio}
-          placeholder="Write something about yourself"
-          placeholderTextColor="#9ca3af"
-          multiline
-        />
-      ) : (
-        <Text style={styles.userBio}>{bio}</Text>
-      )}
-
-      {/* Favorite Albums Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Favorite Albums</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() =>
-              navigation.navigate("Search", { fromScreen: "Profile" })
-            }
-          >
-            <Ionicons name="add-circle" size={24} color="#1DB954" />
-          </TouchableOpacity>
-        </View>
-        {savedAlbums.length > 0 ? (
-          renderHorizontalList(savedAlbums)
         ) : (
-          <Text style={styles.emptyListText}>No favorite albums yet</Text>
+          <Text style={styles.username}>{displayName}</Text>
         )}
-      </View>
 
-      {/* Favorite Songs Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Favorite Songs</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() =>
-              navigation.navigate("Search", { fromScreen: "Profile" })
-            }
-          >
-            <Ionicons name="add-circle" size={24} color="#1DB954" />
-          </TouchableOpacity>
-        </View>
-        {savedTracks.length > 0 ? (
-          renderHorizontalList(savedTracks)
+        {/* Username */}
+        {editMode ? (
+          <View style={styles.usernameInputContainer}>
+            <Text style={styles.usernamePrefix}>@</Text>
+            <TextInput
+              style={styles.usernameInput}
+              value={username}
+              onChangeText={setUsername}
+              placeholder="username"
+              placeholderTextColor="#9ca3af"
+            />
+          </View>
+        ) : null}
+
+        {/* User Bio */}
+        {editMode ? (
+          <TextInput
+            style={styles.editBioInput}
+            value={bio}
+            onChangeText={setBio}
+            placeholder="Write something about yourself"
+            placeholderTextColor="#9ca3af"
+            multiline
+          />
         ) : (
-          <Text style={styles.emptyListText}>No favorite songs yet</Text>
+          <Text style={styles.userBio}>{bio}</Text>
         )}
-      </View>
-      
-      {/* My List Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My List</Text>
-          {savedItems.length > 0 && (
+
+        {/* Favorite Albums Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Favorite Albums</Text>
             <TouchableOpacity
-              style={styles.viewMoreButton}
-              onPress={() => navigation.navigate('AllSavedItems', { items: savedItems.map(item => ({ ...item })) })}
+              style={styles.addButton}
+              onPress={() =>
+                navigation.navigate("Search", { fromScreen: "Profile" })
+              }
             >
-              <Text style={styles.viewMoreText}>View All</Text>
+              <Ionicons name="add-circle" size={24} color="#1DB954" />
             </TouchableOpacity>
+          </View>
+          {savedAlbums.length > 0 ? (
+            renderHorizontalList(savedAlbums)
+          ) : (
+            <Text style={styles.emptyListText}>No favorite albums yet</Text>
           )}
         </View>
 
-        {savedItems.length > 0 ? (
-          renderHorizontalList(savedItems.slice(0, 10).reverse())
-        ) : (
-          <Text style={styles.emptyListText}>No saved items yet</Text>
-        )}
-      </View>
-      
-      {/* My Reviews Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>My Reviews</Text>
-          {userReviews.length > 0 && (
+        {/* Favorite Songs Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Favorite Songs</Text>
             <TouchableOpacity
-              style={styles.viewMoreButton}
-              onPress={() => navigation.navigate('AllReviews', { reviews: userReviews })}
+              style={styles.addButton}
+              onPress={() =>
+                navigation.navigate("Search", { fromScreen: "Profile" })
+              }
             >
-              <Text style={styles.viewMoreText}>View All</Text>
+              <Ionicons name="add-circle" size={24} color="#1DB954" />
             </TouchableOpacity>
+          </View>
+          {savedTracks.length > 0 ? (
+            renderHorizontalList(savedTracks)
+          ) : (
+            <Text style={styles.emptyListText}>No favorite songs yet</Text>
           )}
         </View>
-        
-        {userReviews.length > 0 ? (
-          userReviews.slice(0, 3).map((review) => (
-            <TouchableOpacity
-              key={review.id}
-              style={styles.reviewItem}
-              onPress={() => {
-                if (review.itemType === 'album') {
-                  navigation.navigate('AlbumScreen', {
-                    id: review.itemId,
-                    title: review.itemTitle,
-                    artist: review.itemArtist,
-                    imageUri: review.itemImageUri,
-                    spotifyUri: review.itemSpotifyUri
-                  });
-                } else {
-                  navigation.navigate('Info', {
-                    id: review.itemId,
-                    title: review.itemTitle,
-                    artist: review.itemArtist,
-                    imageUri: review.itemImageUri,
-                    type: review.itemType,
-                    spotifyUri: review.itemSpotifyUri
-                  });
+
+        {/* My List Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My List</Text>
+            {savedItems.length > 0 && (
+              <TouchableOpacity
+                style={styles.viewMoreButton}
+                onPress={() =>
+                  navigation.navigate("AllSavedItems", {
+                    items: savedItems.map((item) => ({ ...item })),
+                  })
                 }
-              }}
-            >
-              <Image 
-                source={review.itemImageUri ? { uri: review.itemImageUri } : require("../assets/babydoll.jpeg")} 
-                style={styles.reviewImage} 
-              />
-              <View style={styles.reviewContent}>
-                <Text style={styles.reviewTitle}>{review.itemTitle}</Text>
-                <Text style={styles.reviewArtist}>{review.itemArtist}</Text>
-                <View style={styles.reviewRating}>
-                  {[1, 2, 3, 4, 5].map((star) => {
-                    const fullStar = star <= Math.floor(review.rating);
-                    const halfStar = !fullStar && star === Math.floor(review.rating) + 1 && review.rating % 1 !== 0;
-                    
-                    return (
-                      <Ionicons
-                        key={star}
-                        name={fullStar ? 'star' : halfStar ? 'star-half' : 'star-outline'}
-                        size={16}
-                        color="#FFD700"
-                        style={{ marginRight: 2 }}
-                      />
-                    );
-                  })}
-                  <Text style={styles.ratingText}>{review.rating.toFixed(1)}</Text>
+              >
+                <Text style={styles.viewMoreText}>View All</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {savedItems.length > 0 ? (
+            renderHorizontalList(savedItems.slice(0, 10).reverse())
+          ) : (
+            <Text style={styles.emptyListText}>No saved items yet</Text>
+          )}
+        </View>
+
+        {/* My Reviews Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My Reviews</Text>
+            {userReviews.length > 0 && (
+              <TouchableOpacity
+                style={styles.viewMoreButton}
+                onPress={() =>
+                  navigation.navigate("AllReviews", { reviews: userReviews })
+                }
+              >
+                <Text style={styles.viewMoreText}>View All</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {userReviews.length > 0 ? (
+            userReviews.slice(0, 3).map((review) => (
+              <TouchableOpacity
+                key={review.id}
+                style={styles.reviewItem}
+                onPress={() => {
+                  if (review.itemType === "album") {
+                    navigation.navigate("AlbumScreen", {
+                      id: review.itemId,
+                      title: review.itemTitle,
+                      artist: review.itemArtist,
+                      imageUri: review.itemImageUri,
+                      spotifyUri: review.itemSpotifyUri,
+                    });
+                  } else {
+                    navigation.navigate("Info", {
+                      id: review.itemId,
+                      title: review.itemTitle,
+                      artist: review.itemArtist,
+                      imageUri: review.itemImageUri,
+                      type: review.itemType,
+                      spotifyUri: review.itemSpotifyUri,
+                    });
+                  }
+                }}
+              >
+                <Image
+                  source={
+                    review.itemImageUri
+                      ? { uri: review.itemImageUri }
+                      : require("../../assets/babydoll.jpeg")
+                  }
+                  style={styles.reviewImage}
+                />
+                <View style={styles.reviewContent}>
+                  <Text style={styles.reviewTitle}>{review.itemTitle}</Text>
+                  <Text style={styles.reviewArtist}>{review.itemArtist}</Text>
+                  <View style={styles.reviewRating}>
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const fullStar = star <= Math.floor(review.rating);
+                      const halfStar =
+                        !fullStar &&
+                        star === Math.floor(review.rating) + 1 &&
+                        review.rating % 1 !== 0;
+
+                      return (
+                        <Ionicons
+                          key={star}
+                          name={
+                            fullStar
+                              ? "star"
+                              : halfStar
+                              ? "star-half"
+                              : "star-outline"
+                          }
+                          size={16}
+                          color="#FFD700"
+                          style={{ marginRight: 2 }}
+                        />
+                      );
+                    })}
+                    <Text style={styles.ratingText}>
+                      {review.rating.toFixed(1)}
+                    </Text>
+                  </View>
+                  {review.review && (
+                    <Text style={styles.reviewText} numberOfLines={2}>
+                      {review.review}
+                    </Text>
+                  )}
                 </View>
-                {review.review && (
-                  <Text style={styles.reviewText} numberOfLines={2}>
-                    {review.review}
+                <View style={styles.reviewTypeContainer}>
+                  <Text style={styles.reviewType}>
+                    {review.itemType === "album" ? "Album" : "Song"}
                   </Text>
-                )}
-              </View>
-              <View style={styles.reviewTypeContainer}>
-                <Text style={styles.reviewType}>{review.itemType === 'album' ? 'Album' : 'Song'}</Text>
-              </View>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>No reviews yet</Text>
-        )}
-      </View>
-    </ScrollView>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No reviews yet</Text>
+          )}
+        </View>
+      </ScrollView>
     </>
   );
 }
@@ -956,37 +1005,37 @@ const styles = StyleSheet.create({
   // Menu modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
     paddingRight: 20,
     paddingTop: 100, // Position it below the top bar
   },
   menuContainer: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: "#1E1E1E",
     borderRadius: 12,
     width: 180,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "#333",
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: "#333",
   },
   menuIcon: {
     marginRight: 12,
   },
   menuText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
   },
   signOutText: {
-    color: '#ff6b6b',
+    color: "#ff6b6b",
   },
   menuButton: {
     padding: 8,

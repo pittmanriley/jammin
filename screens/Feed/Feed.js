@@ -18,8 +18,8 @@ import {
   getPopularTracks,
   getFeaturedContent,
   getFriendActivity,
-} from "../services/feedService";
-import { auth, db } from "../firebaseConfig";
+} from "../../services/feedService";
+import { auth, db } from "../../firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
 const windowWidth = Dimensions.get("window").width;
@@ -180,7 +180,7 @@ export default function Feed({ navigation }) {
           </TouchableOpacity>
         )}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30 }}
       />
     );
   };
@@ -292,7 +292,7 @@ export default function Feed({ navigation }) {
                       source={
                         item.itemImageUri
                           ? { uri: item.itemImageUri }
-                          : require("../assets/babydoll.jpeg")
+                          : require("../../assets/babydoll.jpeg")
                       }
                       style={styles.reviewImage}
                     />
@@ -361,7 +361,9 @@ export default function Feed({ navigation }) {
                 <TouchableOpacity
                   style={styles.viewMoreButton}
                   onPress={() =>
-                    navigation.navigate("AllActivity", { activity: friendActivity })
+                    navigation.navigate("AllActivity", {
+                      activity: friendActivity,
+                    })
                   }
                 >
                   <Text style={styles.viewMoreText}>View More</Text>
@@ -471,7 +473,7 @@ const styles = StyleSheet.create({
   },
   reviewCard: {
     width: 160,
-    height: 200,
+    height: 190,
     marginRight: 12,
     backgroundColor: "#1E1E1E",
     borderRadius: 8,

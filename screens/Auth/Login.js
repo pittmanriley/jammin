@@ -11,8 +11,8 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { colors } from "../theme/colors";
-import { auth } from "../firebaseConfig";
+import { colors } from "../../theme/colors";
+import { auth } from "../../firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function Login() {
@@ -66,7 +66,7 @@ export default function Login() {
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <Image
-            source={require("../assets/Adobe Express - file (1).png")}
+            source={require("../../assets/Adobe Express - file (1).png")}
             style={styles.logo}
             resizeMode="contain"
           />

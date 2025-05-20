@@ -99,12 +99,12 @@ export default function Stats({ navigation }) {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Text style={{height: 28}}>
+          <Text>
             <Ionicons name="arrow-back" size={28} color="white" />
           </Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Listening Stats</Text>
-        <View style={{ width: 28 }} /> {/* Empty view for spacing */}
+        <View style={{ width: 28 }} />
       </View>
 
       {!spotifyConnected && (
@@ -174,10 +174,11 @@ export default function Stats({ navigation }) {
             </View>
           </View>
         )}
+
         {/* Total Listening Time */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Text style={{height: 32}}>
+            <Text>
               <Ionicons name="time-outline" size={32} color="#1DB954" />
             </Text>
           </View>
@@ -197,7 +198,7 @@ export default function Stats({ navigation }) {
         {/* Artists Discovered */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Text style={{height: 32}}>
+            <Text>
               <Ionicons name="people-outline" size={32} color="#1DB954" />
             </Text>
           </View>
@@ -215,8 +216,12 @@ export default function Stats({ navigation }) {
         {/* Songs Played */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Text style={{height: 32}}>
-              <Ionicons name="musical-notes-outline" size={32} color="#1DB954" />
+            <Text>
+              <Ionicons
+                name="musical-notes-outline"
+                size={32}
+                color="#1DB954"
+              />
             </Text>
           </View>
           <View style={styles.statContent}>
@@ -229,7 +234,7 @@ export default function Stats({ navigation }) {
         {/* Top Genres */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Text style={{height: 32}}>
+            <Text>
               <Ionicons name="albums-outline" size={32} color="#1DB954" />
             </Text>
           </View>
@@ -248,7 +253,7 @@ export default function Stats({ navigation }) {
         {/* Daily Average */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Text style={{height: 32}}>
+            <Text>
               <Ionicons name="calendar-outline" size={32} color="#1DB954" />
             </Text>
           </View>
@@ -266,7 +271,7 @@ export default function Stats({ navigation }) {
         {/* Longest Streak */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
-            <Text style={{height: 32}}>
+            <Text>
               <Ionicons name="flame-outline" size={32} color="#1DB954" />
             </Text>
           </View>
@@ -286,6 +291,10 @@ export default function Stats({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#121212",
+  },
   centerContent: {
     justifyContent: "center",
     alignItems: "center",
@@ -294,6 +303,28 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: "white",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#333",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "white",
+  },
+  backButton: {
+    padding: 5,
+  },
+  content: {
+    flex: 1,
+    padding: 16,
   },
   errorContainer: {
     padding: 16,
@@ -370,32 +401,6 @@ const styles = StyleSheet.create({
   topItemArtist: {
     fontSize: 14,
     color: "#9ca3af",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-  },
-  backButton: {
-    padding: 5,
-  },
-  content: {
-    flex: 1,
-    padding: 16,
   },
   statCard: {
     flexDirection: "row",

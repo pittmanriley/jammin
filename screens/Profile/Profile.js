@@ -459,33 +459,36 @@ export default function Profile({ navigation: propNavigation }) {
         </View>
 
         {/* Profile Picture */}
-        <TouchableOpacity
-          style={styles.profilePicWrapper}
-          onPress={editMode ? pickImage : null}
-          disabled={!editMode}
-        >
-          {uploadingImage ? (
-            <View style={[styles.profilePic, styles.uploadingContainer]}>
-              <ActivityIndicator size="small" color="#1DB954" />
-            </View>
-          ) : (
-            <>
-              <Image
-                source={
-                  profilePicUrl
-                    ? { uri: profilePicUrl }
-                    : { uri: "https://via.placeholder.com/120?text=Profile" }
-                }
-                style={styles.profilePic}
-              />
-              {editMode && (
-                <View style={styles.editProfilePicOverlay}>
-                  <Ionicons name="camera" size={24} color="white" />
-                </View>
-              )}
-            </>
-          )}
-        </TouchableOpacity>
+        <View style={{ alignItems: "center", width: "100%" }}>
+          <TouchableOpacity
+            style={styles.profilePicWrapper}
+            onPress={editMode ? pickImage : null}
+            disabled={!editMode}
+          >
+            {uploadingImage ? (
+              <View style={[styles.profilePic, styles.uploadingContainer]}>
+                <ActivityIndicator size="small" color="#1DB954" />
+              </View>
+            ) : profilePicUrl ? (
+              <>
+                <Image
+                  source={{ uri: profilePicUrl }}
+                  style={styles.profilePic}
+                />
+                {editMode && (
+                  <View style={styles.editProfilePicOverlay}>
+                    <Ionicons name="camera" size={24} color="white" />
+                  </View>
+                )}
+              </>
+            ) : (
+              // No profile picture: show circle outline with camera icon
+              <View style={styles.profilePicPlaceholder}>
+                <Ionicons name="camera" size={32} color="#fff" />
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
 
         {/* User Name */}
         {editMode ? (
@@ -762,6 +765,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
     position: "relative",
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    overflow: "hidden",
+    justifyContent: "center",
   },
   profilePic: {
     width: 100,
@@ -1039,5 +1047,15 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     padding: 8,
+  },
+  profilePicPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "transparent",
   },
 });

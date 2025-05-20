@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "../../firebaseConfig";
@@ -35,11 +36,13 @@ export default function InfoScreen({ route, navigation }) {
   const [genres, setGenres] = useState([]);
   const [isSaved, setIsSaved] = useState(false);
   const [savingItem, setSavingItem] = useState(false);
+  const [allReviews, setAllReviews] = useState([]);
 
   useEffect(() => {
     fetchUserReview();
     fetchTrackDetails();
     checkIfItemIsSaved();
+    fetchAllReviews();
   }, []);
 
   const checkIfItemIsSaved = async () => {
@@ -232,6 +235,25 @@ export default function InfoScreen({ route, navigation }) {
     }
   };
 
+  const fetchAllReviews = async () => {
+    try {
+      const reviewsRef = collection(db, "reviews");
+      const q = query(
+        reviewsRef,
+        where("itemTitle", "==", title),
+        where("itemArtist", "==", artist)
+      );
+      const querySnapshot = await getDocs(q);
+      const reviewsList = [];
+      querySnapshot.forEach((doc) => {
+        reviewsList.push({ id: doc.id, ...doc.data() });
+      });
+      setAllReviews(reviewsList);
+    } catch (error) {
+      console.error("Error fetching all reviews:", error);
+    }
+  };
+
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -272,6 +294,19 @@ export default function InfoScreen({ route, navigation }) {
     { user: "rpitt", text: "I loved it!", rating: 5.0 },
   ];
 
+  // Calculate average rating for all reviews and friend reviews
+  const allRatings = [
+    ...allReviews.map((r) => r.rating),
+    ...friendReviews.map((r) => r.rating),
+  ].filter((r) => typeof r === "number" && !isNaN(r));
+
+  const hasReviews = allRatings.length > 0;
+  const avgRating = hasReviews
+    ? Math.round(
+        (allRatings.reduce((a, b) => a + b, 0) / allRatings.length) * 10
+      ) / 10
+    : null;
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -286,7 +321,10 @@ export default function InfoScreen({ route, navigation }) {
       </View>
 
       {/* Scrollable content below */}
-      <ScrollView style={styles.scrollContent}>
+      <ScrollView
+        style={styles.scrollContent}
+        contentContainerStyle={{ paddingBottom: 50 }}
+      >
         {/* Song/Album Info */}
         <View style={styles.itemInfo}>
           <View style={styles.itemText}>
@@ -346,39 +384,136 @@ export default function InfoScreen({ route, navigation }) {
           )
         )}
 
-        {/* Friend Reviews */}
-        <Text style={styles.sectionTitle}>Friend Reviews:</Text>
+        {/* All Reviews Section */}
+        <Text style={styles.sectionTitle}>All Reviews:</Text>
         <View style={styles.divider} />
-        {friendReviews.map((r, i) => (
-          <View key={i} style={styles.reviewBlock}>
-            <View style={styles.reviewRow}>
-              <View>
-                <Text style={styles.reviewUser}>{r.user}</Text>
-                <Text style={styles.reviewText}>"{r.text}"</Text>
+        {allReviews.length > 0 ? (
+          <FlatList
+            data={allReviews}
+            keyExtractor={(review) => review.id || Math.random().toString()}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingVertical: 8 }}
+            renderItem={({ item }) => (
+              <View style={styles.reviewBlockHorizontal}>
+                <Text style={styles.reviewUser}>
+                  {item.userName || "Unknown"}
+                </Text>
+                <View style={styles.starsContainer}>
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const fullStar = star <= Math.floor(item.rating);
+                    const halfStar =
+                      !fullStar &&
+                      star === Math.floor(item.rating) + 1 &&
+                      item.rating % 1 !== 0;
+                    return (
+                      <Ionicons
+                        key={star}
+                        name={
+                          fullStar
+                            ? "star"
+                            : halfStar
+                            ? "star-half"
+                            : "star-outline"
+                        }
+                        size={16}
+                        color="#FFD700"
+                        style={{ marginRight: 2 }}
+                      />
+                    );
+                  })}
+                  <Text style={styles.ratingText}>
+                    {item.rating ? item.rating.toFixed(1) : ""}
+                  </Text>
+                </View>
+                <Text style={styles.reviewText}>"{item.review}"</Text>
               </View>
-              <Text style={styles.reviewRating}>{r.rating}/5</Text>
-            </View>
-            {i < friendReviews.length - 1 && <View style={styles.dashedLine} />}
+            )}
+          />
+        ) : (
+          <View style={styles.noReviewsContainer}>
+            <Text style={styles.emptyText}>No reviews yet</Text>
           </View>
-        ))}
+        )}
+
+        {/* Friend Reviews Section (use same style as All Reviews) */}
+        <Text style={styles.sectionTitleWithMargin}>Friend Reviews:</Text>
+        <View style={styles.divider} />
+        <FlatList
+          data={friendReviews}
+          keyExtractor={(_, i) => i.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingVertical: 8 }}
+          renderItem={({ item }) => (
+            <View style={styles.reviewBlockHorizontal}>
+              <Text style={styles.reviewUser}>{item.user}</Text>
+              <View style={styles.starsContainer}>
+                {[1, 2, 3, 4, 5].map((star) => {
+                  const fullStar = star <= Math.floor(item.rating);
+                  const halfStar =
+                    !fullStar &&
+                    star === Math.floor(item.rating) + 1 &&
+                    item.rating % 1 !== 0;
+                  return (
+                    <Ionicons
+                      key={star}
+                      name={
+                        fullStar
+                          ? "star"
+                          : halfStar
+                          ? "star-half"
+                          : "star-outline"
+                      }
+                      size={16}
+                      color="#FFD700"
+                      style={{ marginRight: 2 }}
+                    />
+                  );
+                })}
+                <Text style={styles.ratingText}>
+                  {item.rating ? item.rating.toFixed(1) : ""}
+                </Text>
+              </View>
+              <Text style={styles.reviewText}>"{item.text}"</Text>
+            </View>
+          )}
+        />
 
         {/* Overall Rating */}
-        <Text style={styles.sectionTitle}>Overall Rating:</Text>
+        <Text style={styles.sectionTitleWithMargin}>Overall Rating:</Text>
         <View style={styles.overallRatingContainer}>
           <View style={styles.starsRow}>
-            {Array(5)
-              .fill(0)
-              .map((_, i) => (
+            {[1, 2, 3, 4, 5].map((star) => {
+              let icon = "star-outline";
+              if (hasReviews) {
+                if (star <= Math.floor(avgRating)) {
+                  icon = "star";
+                } else if (
+                  star === Math.floor(avgRating) + 1 &&
+                  avgRating % 1 >= 0.5
+                ) {
+                  icon = "star-half";
+                }
+              }
+              return (
                 <Ionicons
-                  key={i}
-                  name={i < 4 ? "star" : "star-outline"}
+                  key={star}
+                  name={icon}
                   size={24}
-                  color={i < 4 ? "#FFD700" : "#444"}
+                  color={
+                    hasReviews && star <= Math.ceil(avgRating)
+                      ? "#FFD700"
+                      : "#444"
+                  }
                   style={{ marginRight: 5 }}
                 />
-              ))}
+              );
+            })}
           </View>
-          <Text style={styles.overallText}>4.0 / 5.0</Text>
+          <Text style={styles.overallText}>
+            {hasReviews ? `${avgRating}/5.0` : "-/5.0"}
+          </Text>
         </View>
 
         {/* Buttons */}
@@ -551,12 +686,12 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: "#333",
-    marginBottom: 15,
+    marginBottom: 5,
   },
   overallRatingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    // marginBottom: 10,
   },
   starsRow: {
     flexDirection: "row",
@@ -568,37 +703,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 10,
   },
-  reviewBlock: {
-    marginBottom: 15,
-  },
-  reviewRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 10,
+  reviewBlockHorizontal: {
+    width: 220,
+    marginRight: 16,
+    padding: 12,
+    backgroundColor: "#1e1e1e",
+    borderRadius: 8,
   },
   reviewUser: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
-    marginBottom: 5,
+    marginBottom: 4,
   },
   reviewText: {
     color: "#b3b3b3",
     fontSize: 14,
     fontStyle: "italic",
-    width: "80%",
-  },
-  reviewRating: {
-    color: "#1DB954", // Spotify green
-    fontWeight: "bold",
-  },
-  dashedLine: {
-    height: 1,
-    borderStyle: "dashed",
-    borderWidth: 1,
-    borderColor: "#333",
-    marginVertical: 10,
+    marginBottom: 4,
   },
   buttonRow: {
     flexDirection: "row",
@@ -626,5 +748,22 @@ const styles = StyleSheet.create({
   },
   savedButtonText: {
     color: "#1DB954",
+  },
+  emptyText: {
+    color: "#666",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  noReviewsContainer: {
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  sectionTitleWithMargin: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "white",
+    marginTop: 32,
+    marginBottom: 10,
   },
 });

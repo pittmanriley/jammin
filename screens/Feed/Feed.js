@@ -210,10 +210,9 @@ export default function Feed({ navigation }) {
           />
         }
       >
-        {loading ? (
+        {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#1DB954" />
-            <Text style={styles.loadingText}>Loading music...</Text>
           </View>
         ) : (
           <>

@@ -29,6 +29,7 @@ export default function AlbumScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [userReview, setUserReview] = useState(null);
   const [albumGenres, setAlbumGenres] = useState([]);
+  const [releaseDate, setReleaseDate] = useState(null);
 
   useEffect(() => {
     fetchAlbumDetails();
@@ -46,6 +47,9 @@ export default function AlbumScreen({ route, navigation }) {
         albumDetails.genres.length > 0
       ) {
         setAlbumGenres(albumDetails.genres);
+      }
+      if (albumDetails && albumDetails.release_date) {
+        setReleaseDate(albumDetails.release_date);
       }
     } catch (error) {
       console.error("Error fetching album details:", error);
@@ -198,6 +202,9 @@ export default function AlbumScreen({ route, navigation }) {
           <View style={styles.albumDetails}>
             <Text style={styles.albumTitle}>{title}</Text>
             <Text style={styles.albumArtist}>{artist}</Text>
+            {releaseDate && (
+              <Text style={styles.releaseDate}>{releaseDate}</Text>
+            )}
 
             {/* Display genres if available */}
             {albumGenres.length > 0 && (
@@ -209,9 +216,14 @@ export default function AlbumScreen({ route, navigation }) {
                 ))}
               </View>
             )}
+          </View>
+        </View>
 
+        {/* User's Review (if exists) */}
+        {userReview && (
+          <View style={styles.userReviewContainer}>
             <TouchableOpacity
-              style={styles.reviewButton}
+              style={styles.editReviewIcon}
               onPress={() =>
                 navigation.navigate("LeaveReview", {
                   song: {
@@ -225,16 +237,8 @@ export default function AlbumScreen({ route, navigation }) {
                 })
               }
             >
-              <Text style={styles.reviewButtonText}>
-                {userReview ? "Edit Review" : "Leave Review"}
-              </Text>
+              <Ionicons name="create-outline" size={22} color="#fff" />
             </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* User's Review (if exists) */}
-        {userReview && (
-          <View style={styles.userReviewContainer}>
             <Text style={styles.userReviewTitle}>My Review</Text>
             <View style={styles.userReviewContent}>
               <View style={styles.starsContainer}>
@@ -351,23 +355,24 @@ const styles = StyleSheet.create({
   albumArtist: {
     fontSize: 16,
     color: "#b3b3b3",
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  reviewButton: {
-    backgroundColor: "#1DB954",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-  },
-  reviewButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  releaseDate: {
+    color: "#b3b3b3",
+    fontSize: 14,
+    marginBottom: 12,
   },
   userReviewContainer: {
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#333",
+  },
+  editReviewIcon: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 2,
+    padding: 6,
   },
   userReviewTitle: {
     fontSize: 18,

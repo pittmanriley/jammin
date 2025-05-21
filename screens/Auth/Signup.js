@@ -12,7 +12,14 @@ import { useNavigation } from "@react-navigation/native";
 import { theme } from "../../theme/theme";
 import { auth, db } from "../../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -21,6 +28,13 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
+
+  const checkUsernameUnique = async (username) => {
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("username", "==", username));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.empty;
+  };
 
   const handleSignup = async () => {
     // Validate inputs
@@ -47,6 +61,18 @@ export default function Signup() {
 
     try {
       setLoading(true);
+
+      // Check if username is unique
+      const isUsernameUnique = await checkUsernameUnique(username);
+      if (!isUsernameUnique) {
+        Alert.alert(
+          "Error",
+          "This username is already taken. Please choose another one."
+        );
+        setLoading(false);
+        return;
+      }
+
       // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -62,6 +88,7 @@ export default function Signup() {
         displayName: username, // Use username as initial display name
         createdAt: new Date().toISOString(),
         savedItems: [],
+        friends: [], // Initialize empty friends array
       });
 
       Alert.alert("Success", "Account created successfully!");

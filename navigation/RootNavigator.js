@@ -7,6 +7,7 @@ import Feed from "../screens/Feed/Feed";
 import Profile from "../screens/Profile/Profile";
 // import Info from "../screens/Feed/Info";
 import Search from "../screens/Feed/Search";
+import FriendSearch from "../screens/Feed/FriendSearch";
 import AlbumScreen from "../screens/Feed/AlbumScreen";
 import ArtistScreen from "../screens/Feed/ArtistScreen";
 import LeaveReview from "../screens/Review/LeaveReview";
@@ -110,6 +111,11 @@ export default function RootNavigator() {
         <Stack.Screen
           name="Search"
           component={Search}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="FriendSearch"
+          component={FriendSearch}
           options={{ headerShown: false }}
         />
         <Stack.Screen

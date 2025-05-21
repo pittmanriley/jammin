@@ -189,14 +189,14 @@ export default function Feed({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={styles.header}>Jammin'</Text>
         <Ionicons
-          name="search"
+          name="people"
           size={28}
           color={theme.text.primary}
-          style={styles.searchIcon}
-          onPress={() => navigation.navigate("LeaveReview")}
+          style={styles.friendsIcon}
+          onPress={() => navigation.navigate("FriendSearch")}
         />
+        <Text style={styles.header}>Jammin'</Text>
       </View>
 
       {/* Scrollable content */}
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     color: theme.text.primary,
     textAlign: "center",
   },
-  searchIcon: {
+  friendsIcon: {
     position: "absolute",
     right: 20,
     top: 10,

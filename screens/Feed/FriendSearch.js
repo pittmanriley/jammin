@@ -220,6 +220,7 @@ export default function FriendSearch() {
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
             returnKeyType="search"
+            autoCapitalize="none"
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity

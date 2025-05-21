@@ -392,7 +392,7 @@ export default function Feed({ navigation }) {
 
             {/* Friends' Activity Section */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Friends' Activity</Text>
+              <Text style={styles.sectionTitle}>Followers' Activity</Text>
               {friendReviews.length > 10 && (
                 <TouchableOpacity
                   style={styles.viewMoreButton}

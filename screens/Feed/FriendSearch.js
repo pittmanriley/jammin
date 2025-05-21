@@ -181,7 +181,7 @@ export default function FriendSearch() {
         >
           <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Find Friends</Text>
+        <Text style={styles.headerTitle}>Find Users</Text>
       </View>
 
       <View style={styles.searchContainer}>
@@ -238,7 +238,7 @@ export default function FriendSearch() {
                 </Text>
               ) : (
                 <Text style={styles.emptyText}>
-                  Search for users by their username to add them as friends.
+                  Search for users by their username {'\n'}to follow them.
                 </Text>
               )}
             </View>

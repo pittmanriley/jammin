@@ -60,50 +60,25 @@ export default function FriendSearch() {
     try {
       setLoading(true);
       const usersRef = collection(db, "users");
-      // Query for displayName prefix
-      const displayNameQ = query(
-        usersRef,
-        where("displayName", ">=", searchQuery),
-        where("displayName", "<=", searchQuery + "\uf8ff")
-      );
-      // Query for username prefix
-      const usernameQ = query(
-        usersRef,
-        where("username", ">=", searchQuery),
-        where("username", "<=", searchQuery + "\uf8ff")
-      );
-      const [displayNameSnap, usernameSnap] = await Promise.all([
-        getDocs(displayNameQ),
-        getDocs(usernameQ),
-      ]);
-      // Combine and deduplicate
-      const resultsMap = new Map();
-      displayNameSnap.forEach((doc) => {
-        if (doc.id !== auth.currentUser.uid) {
-          const data = doc.data();
-          // Case-insensitive prefix match
-          if (
-            (data.displayName || "")
-              .toLowerCase()
-              .startsWith(searchQuery.toLowerCase())
-          ) {
-            resultsMap.set(doc.id, { id: doc.id, ...data });
-          }
+      const querySnapshot = await getDocs(usersRef);
+
+      // Filter results in memory for case-insensitive search
+      const results = [];
+      querySnapshot.forEach((doc) => {
+        if (doc.id === auth.currentUser.uid) return; // Skip current user
+
+        const data = doc.data();
+        const displayName = (data.displayName || "").toLowerCase();
+        const username = (data.username || "").toLowerCase();
+        const searchTerm = searchQuery.toLowerCase();
+
+        // Check if either displayName or username contains the search term
+        if (displayName.includes(searchTerm) || username.includes(searchTerm)) {
+          results.push({ id: doc.id, ...data });
         }
       });
-      usernameSnap.forEach((doc) => {
-        if (doc.id !== auth.currentUser.uid) {
-          const data = doc.data();
-          if (
-            (data.username || "")
-              .toLowerCase()
-              .startsWith(searchQuery.toLowerCase())
-          ) {
-            resultsMap.set(doc.id, { id: doc.id, ...data });
-          }
-        }
-      });
-      setSearchResults(Array.from(resultsMap.values()));
+
+      setSearchResults(results);
     } catch (error) {
       console.error("Error searching users:", error);
       Alert.alert("Error", "Failed to search users. Please try again.");
@@ -206,7 +181,7 @@ export default function FriendSearch() {
         >
           <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Find Friends</Text>
+        <Text style={styles.headerTitle}>Find Users</Text>
       </View>
 
       <View style={styles.searchContainer}>
@@ -263,7 +238,7 @@ export default function FriendSearch() {
                 </Text>
               ) : (
                 <Text style={styles.emptyText}>
-                  Search for users by their username to add them as friends.
+                  Search for users by their username {'\n'}to follow them.
                 </Text>
               )}
             </View>

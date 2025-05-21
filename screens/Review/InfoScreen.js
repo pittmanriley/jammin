@@ -481,7 +481,7 @@ export default function InfoScreen({ route, navigation }) {
         )}
 
         {/* Friend Reviews Section (use same style as All Reviews) */}
-        <Text style={styles.sectionTitleWithMargin}>Friend Reviews:</Text>
+        <Text style={styles.sectionTitleWithMargin}>Follower Reviews:</Text>
         <View style={styles.divider} />
         <FlatList
           data={friendReviews}

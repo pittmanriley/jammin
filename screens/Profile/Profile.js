@@ -144,11 +144,7 @@ export default function Profile({ navigation: propNavigation }) {
           userData.displayName || currentUser.displayName || "User"
         );
         setBio(userData.bio || "No bio yet");
-        setProfilePicUrl(
-          userData.profilePicUrl ||
-            currentUser.photoURL ||
-            require("../../assets/profile.jpg")
-        );
+        setProfilePicUrl(userData.profilePicUrl || null);
         setUsername(userData.username || "");
 
         // Get saved items

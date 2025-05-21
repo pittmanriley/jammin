@@ -315,61 +315,56 @@ export default function Profile({ navigation: propNavigation }) {
 
   const pickImage = async () => {
     try {
-      const permissionResult =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (!permissionResult.granted) {
-        Alert.alert(
-          "Permission Required",
-          "You need to grant permission to access your photos"
-        );
-        return;
-      }
-
+      // Try a simpler approach first
+      console.log("Starting image picker...");
+      
+      // Use a more conservative configuration
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.5, // Lower quality to avoid memory issues
+        base64: false, // Don't request base64 data to avoid memory issues
       });
-
+      
+      console.log("Image picker completed");
+      
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        uploadImage(result.assets[0].uri);
+        console.log("Image selected, uploading...");
+        // Just update with the URI directly to avoid any processing issues
+        setProfilePicUrl(result.assets[0].uri);
+        
+        // Separate the Firestore update from the image processing
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          setUploadingImage(true);
+          try {
+            const userRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userRef, {
+              profilePicUrl: result.assets[0].uri,
+              updatedAt: new Date().toISOString(),
+            });
+            console.log("Profile picture updated in Firestore");
+          } catch (updateError) {
+            console.error("Error updating Firestore:", updateError);
+          } finally {
+            setUploadingImage(false);
+          }
+        }
       }
     } catch (error) {
-      console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image. Please try again.");
-    }
-  };
-
-  const uploadImage = async (uri) => {
-    try {
-      setUploadingImage(true);
-      const currentUser = auth.currentUser;
-      if (!currentUser) return;
-
-      // Instead of using Firebase Storage which is causing issues,
-      // we'll just save the local URI for now
-      setProfilePicUrl(uri);
-
-      // Update the user's profile in Firestore
-      const userRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userRef, {
-        profilePicUrl: uri,
-        updatedAt: new Date().toISOString(),
-      });
-
-      console.log("Profile picture updated with local URI");
-    } catch (error) {
-      console.error("Error updating profile picture:", error);
+      console.error("Error in image picker:", error);
+      
+      // Show detailed error information
       Alert.alert(
         "Error",
-        "Failed to update profile picture. Please try again."
+        `Image picker error: ${error.message || 'Unknown error'}`,
+        [{ text: "OK" }]
       );
-    } finally {
-      setUploadingImage(false);
     }
   };
+
+  // We've merged the uploadImage functionality directly into the pickImage function
 
   // Helper function to safely get image source
   const getImageSource = (item) => {
@@ -608,16 +603,34 @@ export default function Profile({ navigation: propNavigation }) {
           ) : (
             <Text style={styles.displayNameSpotify}>{displayName}</Text>
           )}
-          <View style={styles.profileImageContainerSpotify}>
-            <Image
-              source={
-                profilePicUrl
-                  ? { uri: profilePicUrl }
-                  : require("../../assets/babydoll.jpeg")
-              }
-              style={styles.profileImageSpotify}
-            />
-          </View>
+          {/* Profile Picture */}
+          <TouchableOpacity
+            style={styles.profilePicWrapper}
+            onPress={editMode ? pickImage : null}
+            disabled={!editMode}
+          >
+            {uploadingImage ? (
+              <View style={[styles.profilePic, styles.uploadingContainer]}>
+                <ActivityIndicator size="small" color="#1DB954" />
+              </View>
+            ) : (
+              <>
+                <Image
+                  source={
+                    profilePicUrl
+                      ? { uri: profilePicUrl }
+                      : require("../../assets/babydoll.jpeg")
+                  }
+                  style={styles.profilePic}
+                />
+                {editMode && (
+                  <View style={styles.editProfilePicOverlay}>
+                    <Ionicons name="camera" size={24} color="white" />
+                  </View>
+                )}
+              </>
+            )}
+          </TouchableOpacity>
           {editMode ? (
             <View style={styles.usernameInputContainerCentered}>
               <Text style={styles.usernamePrefix}>@</Text>
@@ -1471,5 +1484,32 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
+  },
+  profilePicWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  profilePic: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  uploadingContainer: {
+    backgroundColor: theme.background.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editProfilePicOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

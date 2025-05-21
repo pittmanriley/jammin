@@ -517,7 +517,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    marginBottom: 20,
+    marginBottom: 10,
+    marginTop: 10,
   },
   header: {
     fontSize: 28,

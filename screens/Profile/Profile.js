@@ -526,6 +526,41 @@ export default function Profile({ navigation: propNavigation }) {
         </View>
       </Modal>
 
+      {/* Top Bar - OUTSIDE ScrollView */}
+      <View style={styles.topBarFixed}>
+        <TouchableOpacity
+          style={styles.statsButton}
+          onPress={() => navigation.navigate("Stats")}
+        >
+          <Ionicons
+            name="stats-chart-outline"
+            size={24}
+            color={theme.text.primary}
+          />
+        </TouchableOpacity>
+        {editMode ? (
+          <View style={styles.editButtonsContainer}>
+            <TouchableOpacity style={styles.cancelButton} onPress={cancelEdit}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => setMenuVisible(true)}
+          >
+            <Ionicons
+              name="ellipsis-vertical"
+              size={24}
+              color={theme.text.primary}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
+
       <ScrollView
         style={styles.container}
         refreshControl={
@@ -537,46 +572,6 @@ export default function Profile({ navigation: propNavigation }) {
           />
         }
       >
-        <View style={styles.topBar}>
-          {/* Stats Icon */}
-          <TouchableOpacity
-            style={styles.statsButton}
-            onPress={() => navigation.navigate("Stats")}
-          >
-            <Ionicons
-              name="stats-chart-outline"
-              size={24}
-              color={theme.text.primary}
-            />
-          </TouchableOpacity>
-
-          {/* Edit/Save Button */}
-          {editMode ? (
-            <View style={styles.editButtonsContainer}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={cancelEdit}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.menuButton}
-              onPress={() => setMenuVisible(true)}
-            >
-              <Ionicons
-                name="ellipsis-vertical"
-                size={24}
-                color={theme.text.primary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
         {/* Profile Header - All Centered */}
         <View style={styles.profileHeaderCentered}>
           {editMode ? (
@@ -939,7 +934,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.background.primary,
-    paddingTop: 50,
   },
   loadingContainer: {
     justifyContent: "center",
@@ -951,16 +945,22 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
   },
-  topBar: {
+  topBarFixed: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 10,
-    marginBottom: 10,
+    paddingTop: 50,
+    backgroundColor: theme.background.primary,
+    zIndex: 10,
   },
-  statsButton: {
-    padding: 8,
+  topBarDisplayName: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 22,
+    fontWeight: "bold",
+    color: theme.text.primary,
+    marginHorizontal: 10,
   },
   editButtonsContainer: {
     flexDirection: "row",
@@ -1300,7 +1300,7 @@ const styles = StyleSheet.create({
   },
   profileHeaderCentered: {
     alignItems: "center",
-    marginTop: 32,
+    marginTop: 8,
     marginBottom: 16,
   },
   profileImageContainerSpotify: {

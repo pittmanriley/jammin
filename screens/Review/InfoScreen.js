@@ -176,7 +176,6 @@ export default function InfoScreen({ route, navigation }) {
           }
         })
         .catch((err) => {
-          console.error("Error checking if can open URL:", err);
           // Fallback to web URL if there's an error
           const trackId =
             spotifyUri.split("spotify:track:")[1] ||
@@ -591,7 +590,7 @@ export default function InfoScreen({ route, navigation }) {
           >
             <Ionicons
               name="create-outline"
-              size={20}
+              size={22}
               color={theme.text.primary}
             />
             <Text style={styles.buttonText}>
@@ -606,7 +605,7 @@ export default function InfoScreen({ route, navigation }) {
           >
             <Ionicons
               name={isSaved ? "heart" : "heart-outline"}
-              size={20}
+              size={22}
               color={isSaved ? theme.button.primary : theme.text.primary}
             />
             <Text
@@ -614,15 +613,6 @@ export default function InfoScreen({ route, navigation }) {
             >
               {savingItem ? "Saving..." : isSaved ? "Saved" : "Save"}
             </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button}>
-            <Ionicons
-              name="share-social-outline"
-              size={20}
-              color={theme.text.primary}
-            />
-            <Text style={styles.buttonText}>Share</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -788,26 +778,30 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 30,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: theme.background.secondary,
+    marginVertical: 20,
+    paddingHorizontal: 10,
   },
   button: {
     backgroundColor: theme.background.secondary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 20,
     flex: 1,
-    marginHorizontal: 5,
+    marginHorizontal: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
   },
   buttonText: {
     color: theme.text.primary,
-    marginLeft: 5,
-    fontSize: 12,
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '500',
   },
   savedButtonText: {
     color: theme.button.primary,

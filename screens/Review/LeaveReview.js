@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {
@@ -389,19 +391,20 @@ export default function LeaveReview({ route, navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelButton}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {directReviewMode ? "Leave a Review" : "Search & Review"}
-        </Text>
-        <View style={{ width: 50 }} />
-      </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.cancelButton}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {directReviewMode ? "Leave a Review" : "Search & Review"}
+          </Text>
+          <View style={{ width: 50 }} />
+        </View>
 
       {!spotifyConnected ? (
         <View style={styles.spotifyConnectContainer}>
@@ -517,7 +520,8 @@ export default function LeaveReview({ route, navigation }) {
           {renderReviewForm()}
         </>
       )}
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 

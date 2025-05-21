@@ -6,12 +6,64 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  Linking,
+  Alert,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { theme } from "../../theme/theme";
 
 export default function AllSongs({ route, navigation }) {
   const { songs } = route.params;
+
+  const openInSpotify = (spotifyUri) => {
+    if (spotifyUri) {
+      Linking.canOpenURL(spotifyUri)
+        .then((supported) => {
+          if (supported) {
+            // Try to open in Spotify app
+            Linking.openURL(spotifyUri);
+          } else {
+            // If Spotify app is not installed, open in web browser
+            let webUrl;
+
+            if (spotifyUri.includes("spotify:track:")) {
+              // Format for tracks: spotify:track:5ch484wWUkTPp6saoxACAN -> https://open.spotify.com/track/5ch484wWUkTPp6saoxACAN
+              const trackId = spotifyUri.split("spotify:track:")[1];
+              webUrl = `https://open.spotify.com/track/${trackId}`;
+            } else if (spotifyUri.includes("spotify:album:")) {
+              // Format for albums: spotify:album:4StaOoKvc1slai3SMaOhCZ -> https://open.spotify.com/album/4StaOoKvc1slai3SMaOhCZ
+              const albumId = spotifyUri.split("spotify:album:")[1];
+              webUrl = `https://open.spotify.com/album/${albumId}`;
+            } else if (spotifyUri.includes("spotify:artist:")) {
+              // Format for artists: spotify:artist:123456 -> https://open.spotify.com/artist/123456
+              const artistId = spotifyUri.split("spotify:artist:")[1];
+              webUrl = `https://open.spotify.com/artist/${artistId}`;
+            } else {
+              // Fallback for other types
+              webUrl = spotifyUri
+                .replace("spotify:", "https://open.spotify.com/")
+                .replace(/:/g, "/");
+            }
+
+            console.log("Opening Spotify web URL:", webUrl);
+            Linking.openURL(webUrl);
+          }
+        })
+        .catch((err) => {
+          // Fallback to web URL if there's an error
+          const trackId = spotifyUri.split("spotify:track:")[1] || 
+                           spotifyUri.split("spotify:album:")[1] ||
+                           spotifyUri.split("spotify:artist:")[1];
+          const type = spotifyUri.includes("track") ? "track" : 
+                      spotifyUri.includes("album") ? "album" : 
+                      spotifyUri.includes("artist") ? "artist" : "track";
+          const webUrl = `https://open.spotify.com/${type}/${trackId}`;
+          Linking.openURL(webUrl);
+        });
+    } else {
+      Alert.alert("Error", "Spotify link not available for this item");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -56,11 +108,19 @@ export default function AllSongs({ route, navigation }) {
                 {item.artist}
               </Text>
             </View>
-            <Ionicons
-              name="play-circle-outline"
-              size={24}
-              color={theme.button.primary}
-            />
+            <TouchableOpacity
+              onPress={() => {
+                if (item.spotifyUri) {
+                  openInSpotify(item.spotifyUri);
+                }
+              }}
+            >
+              <Ionicons
+                name="play-circle-outline"
+                size={24}
+                color={theme.button.primary}
+              />
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
       />

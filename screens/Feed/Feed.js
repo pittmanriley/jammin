@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Linking,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
@@ -122,6 +123,20 @@ export default function Feed({ navigation }) {
         setFriendReviews([]);
         return;
       }
+      
+      // First, fetch all friend user data to get their usernames
+      const friendData = {};
+      for (const fid of friendIds) {
+        const friendRef = doc(db, "users", fid);
+        const friendDoc = await getDoc(friendRef);
+        if (friendDoc.exists()) {
+          friendData[fid] = {
+            username: friendDoc.data().username || "",
+            displayName: friendDoc.data().displayName || ""
+          };
+        }
+      }
+      
       // Fetch reviews for all friends
       let allReviews = [];
       for (const fid of friendIds) {
@@ -129,9 +144,16 @@ export default function Feed({ navigation }) {
         const q = query(reviewsRef, where("userId", "==", fid));
         const querySnapshot = await getDocs(q);
         querySnapshot.forEach((doc) => {
-          allReviews.push({ id: doc.id, ...doc.data() });
+          // Add username info to each review
+          allReviews.push({ 
+            id: doc.id, 
+            ...doc.data(),
+            username: friendData[fid]?.username || "",
+            displayName: friendData[fid]?.displayName || "" 
+          });
         });
       }
+      
       // Sort by most recent first
       allReviews.sort((a, b) => {
         const dateA = a.createdAt?.seconds || 0;
@@ -449,31 +471,36 @@ export default function Feed({ navigation }) {
                     <Text style={styles.reviewItemArtist} numberOfLines={1}>
                       {item.itemArtist}
                     </Text>
-                    <View style={styles.reviewRating}>
-                      {[1, 2, 3, 4, 5].map((star) => {
-                        const fullStar = star <= Math.floor(item.rating);
-                        const halfStar =
-                          !fullStar &&
-                          star === Math.floor(item.rating) + 1 &&
-                          item.rating % 1 !== 0;
-                        return (
-                          <Ionicons
-                            key={star}
-                            name={
-                              fullStar
-                                ? "star"
-                                : halfStar
-                                ? "star-half"
-                                : "star-outline"
-                            }
-                            size={12}
-                            color="#FFD700"
-                          />
-                        );
-                      })}
-                      <Text style={styles.ratingText}>
-                        {item.rating.toFixed(1)}
-                      </Text>
+                    <View style={styles.reviewRatingContainer}>
+                      <View style={styles.reviewRating}>
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const fullStar = star <= Math.floor(item.rating);
+                          const halfStar =
+                            !fullStar &&
+                            star === Math.floor(item.rating) + 1 &&
+                            item.rating % 1 !== 0;
+                          return (
+                            <Ionicons
+                              key={star}
+                              name={
+                                fullStar
+                                  ? "star"
+                                  : halfStar
+                                  ? "star-half"
+                                  : "star-outline"
+                              }
+                              size={12}
+                              color="#FFD700"
+                            />
+                          );
+                        })}
+                        <Text style={styles.ratingText}>
+                          {item.rating.toFixed(1)}
+                        </Text>
+                      </View>
+                      {item.username && (
+                        <Text style={styles.usernameText}>@{item.username}</Text>
+                      )}
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -560,9 +587,20 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   imageWrapper: {
+    marginRight: 15,
     width: imageSize,
-    marginRight: 10,
     alignItems: "center",
+    position: "relative",
+  },
+  playButton: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -20 }, { translateY: -20 }],
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 25,
+    padding: 0,
+    zIndex: 10,
   },
   image: {
     width: imageSize,
@@ -617,16 +655,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 6,
   },
+  reviewRatingContainer: {
+    marginTop: 4,
+  },
   reviewRating: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
   },
   ratingText: {
-    color: "#FFD700",
     fontSize: 12,
+    color: "#FFD700",
     marginLeft: 4,
     fontWeight: "bold",
+  },
+  usernameText: {
+    fontSize: 10,
+    color: theme.text.secondary,
+    marginTop: 2, // Space below the stars
+    fontStyle: "italic",
   },
   emptyListText: {
     color: theme.text.secondary,

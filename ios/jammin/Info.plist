@@ -52,6 +52,10 @@
     </dict>
     <key>NSFaceIDUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>spotify</string>
+    </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

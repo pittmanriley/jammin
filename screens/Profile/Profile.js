@@ -51,6 +51,8 @@ export default function Profile({ navigation: propNavigation }) {
   const [userReviews, setUserReviews] = useState([]);
   const [username, setUsername] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
+  const [friends, setFriends] = useState([]);
+  const [friendsModalVisible, setFriendsModalVisible] = useState(false);
 
   // Filter saved items by type
   const savedAlbums = savedItems.filter((item) => item.type === "album");
@@ -137,6 +139,24 @@ export default function Profile({ navigation: propNavigation }) {
         if (userData.savedItems && Array.isArray(userData.savedItems)) {
           setSavedItems(userData.savedItems);
         }
+
+        // Get friends
+        if (userData.friends && Array.isArray(userData.friends)) {
+          // Fetch friend user data
+          if (userData.friends.length > 0) {
+            const friendDocs = await Promise.all(
+              userData.friends.map((fid) => getDoc(doc(db, "users", fid)))
+            );
+            const friendList = friendDocs
+              .filter((d) => d.exists())
+              .map((d) => ({ id: d.id, ...d.data() }));
+            setFriends(friendList);
+          } else {
+            setFriends([]);
+          }
+        } else {
+          setFriends([]);
+        }
       } else {
         // Create user document if it doesn't exist
         await setDoc(userRef, {
@@ -158,10 +178,35 @@ export default function Profile({ navigation: propNavigation }) {
     }
   };
 
+  const checkUsernameUnique = async (newUsername, currentUsername) => {
+    // If the username hasn't changed, it's still unique
+    if (newUsername === currentUsername) {
+      return true;
+    }
+
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("username", "==", newUsername));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.empty;
+  };
+
   const saveProfile = async () => {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) return;
+
+      // Check if username is unique
+      const isUsernameUnique = await checkUsernameUnique(
+        username,
+        user?.username
+      );
+      if (!isUsernameUnique) {
+        Alert.alert(
+          "Error",
+          "This username is already taken. Please choose another one."
+        );
+        return;
+      }
 
       const userRef = doc(db, "users", currentUser.uid);
 
@@ -410,6 +455,51 @@ export default function Profile({ navigation: propNavigation }) {
         </TouchableOpacity>
       </Modal>
 
+      {/* Friends Modal */}
+      <Modal
+        visible={friendsModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setFriendsModalVisible(false)}
+      >
+        <View style={styles.friendsModalOverlay}>
+          <View style={styles.friendsModalContent}>
+            <Text style={styles.friendsModalTitle}>Friends</Text>
+            <FlatList
+              data={friends}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <View style={styles.friendItem}>
+                  <Image
+                    source={
+                      item.profilePicUrl
+                        ? { uri: item.profilePicUrl }
+                        : require("../../assets/babydoll.jpeg")
+                    }
+                    style={styles.friendProfilePic}
+                  />
+                  <View style={{ marginLeft: 12 }}>
+                    <Text style={styles.friendDisplayName}>
+                      {item.displayName || item.username}
+                    </Text>
+                    <Text style={styles.friendUsername}>@{item.username}</Text>
+                  </View>
+                </View>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No friends yet.</Text>
+              }
+            />
+            <TouchableOpacity
+              style={styles.closeModalButton}
+              onPress={() => setFriendsModalVisible(false)}
+            >
+              <Text style={styles.closeModalButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <ScrollView
         style={styles.container}
         refreshControl={
@@ -461,74 +551,29 @@ export default function Profile({ navigation: propNavigation }) {
           )}
         </View>
 
-        <View style={styles.usernameContainer}>
-          <Text style={styles.usernameText}>
-            {username ? `@${username}` : "Profile"}
-          </Text>
-        </View>
-
-        {/* Profile Picture */}
-        <View style={{ alignItems: "center", width: "100%" }}>
-          <TouchableOpacity
-            style={styles.profilePicWrapper}
-            onPress={editMode ? pickImage : null}
-            disabled={!editMode}
-          >
-            {uploadingImage ? (
-              <View style={[styles.profilePic, styles.uploadingContainer]}>
-                <ActivityIndicator size="small" color={theme.button.primary} />
-              </View>
-            ) : profilePicUrl ? (
-              <>
-                <Image
-                  source={{ uri: profilePicUrl }}
-                  style={styles.profilePic}
-                />
-                {editMode && (
-                  <View style={styles.editProfilePicOverlay}>
-                    <Ionicons
-                      name="camera"
-                      size={24}
-                      color={theme.text.primary}
-                    />
-                  </View>
-                )}
-              </>
-            ) : (
-              <View style={styles.profilePicPlaceholder}>
-                <Ionicons name="camera" size={32} color={theme.text.primary} />
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* User Name */}
-        {editMode ? (
-          <TextInput
-            style={styles.editNameInput}
-            value={displayName}
-            onChangeText={setDisplayName}
-            placeholder="Your name"
-            placeholderTextColor={theme.text.secondary}
-          />
-        ) : (
-          <Text style={styles.username}>{displayName}</Text>
-        )}
-
-        {/* Username */}
-        {editMode ? (
-          <View style={styles.usernameInputContainer}>
-            <Text style={styles.usernamePrefix}>@</Text>
-            <TextInput
-              style={styles.usernameInput}
-              value={username}
-              onChangeText={setUsername}
-              placeholder="username"
-              placeholderTextColor={theme.text.secondary}
+        {/* Profile Header - All Centered */}
+        <View style={styles.profileHeaderCentered}>
+          <Text style={styles.displayNameSpotify}>{displayName}</Text>
+          <View style={styles.profileImageContainerSpotify}>
+            <Image
+              source={
+                profilePicUrl
+                  ? { uri: profilePicUrl }
+                  : require("../../assets/babydoll.jpeg")
+              }
+              style={styles.profileImageSpotify}
             />
           </View>
-        ) : null}
-
+          <Text style={styles.usernameSpotify}>@{username}</Text>
+          <View style={styles.followRowSpotifyCentered}>
+            <TouchableOpacity onPress={() => setFriendsModalVisible(true)}>
+              <Text style={styles.followStatSpotify}>
+                <Text style={styles.followNumberSpotify}>{friends.length}</Text>{" "}
+                following
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
         {/* User Bio */}
         {editMode ? (
           <TextInput
@@ -1076,5 +1121,108 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "transparent",
+  },
+  profileHeaderCentered: {
+    alignItems: "center",
+    marginTop: 32,
+    marginBottom: 16,
+  },
+  profileImageContainerSpotify: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: "hidden",
+    marginBottom: 16,
+    backgroundColor: theme.background.secondary,
+  },
+  profileImageSpotify: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    resizeMode: "cover",
+  },
+  displayNameSpotify: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: theme.text.primary,
+    marginBottom: 4,
+  },
+  usernameSpotify: {
+    fontSize: 16,
+    color: theme.text.secondary,
+    marginBottom: 8,
+  },
+  followRowSpotifyCentered: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  followStatSpotify: {
+    fontSize: 16,
+    color: theme.text.secondary,
+  },
+  followNumberSpotify: {
+    fontWeight: "bold",
+    color: theme.text.primary,
+  },
+  dotSpotify: {
+    fontSize: 18,
+    color: theme.text.secondary,
+    marginHorizontal: 6,
+  },
+  friendsModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  friendsModalContent: {
+    backgroundColor: theme.background.primary,
+    borderRadius: 16,
+    padding: 24,
+    width: "80%",
+    maxHeight: "70%",
+  },
+  friendsModalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: theme.text.primary,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  friendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  friendProfilePic: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.background.secondary,
+  },
+  friendDisplayName: {
+    fontSize: 16,
+    color: theme.text.primary,
+    fontWeight: "bold",
+  },
+  friendUsername: {
+    fontSize: 14,
+    color: theme.text.secondary,
+  },
+  closeModalButton: {
+    marginTop: 16,
+    alignSelf: "center",
+    backgroundColor: theme.button.primary,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+  },
+  closeModalButtonText: {
+    color: theme.text.primary,
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

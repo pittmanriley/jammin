@@ -229,6 +229,8 @@ export default function Search() {
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
+            autoCorrect={false}
+            spellCheck={false}
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (

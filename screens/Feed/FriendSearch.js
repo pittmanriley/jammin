@@ -159,7 +159,10 @@ export default function FriendSearch() {
 
     return (
       <View style={styles.resultItem}>
-        <View style={styles.resultContent}>
+        <TouchableOpacity
+          style={styles.resultContent}
+          onPress={() => navigation.navigate("UserProfile", { userId: item.id })}
+        >
           <Image
             source={
               item.profilePicUrl
@@ -176,7 +179,7 @@ export default function FriendSearch() {
               @{item.username}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.addButton}
@@ -221,6 +224,8 @@ export default function FriendSearch() {
             onSubmitEditing={handleSearch}
             returnKeyType="search"
             autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity

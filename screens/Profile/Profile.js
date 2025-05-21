@@ -152,14 +152,24 @@ export default function Profile({ navigation: propNavigation }) {
 
         // Get friends
         if (userData.friends && Array.isArray(userData.friends)) {
-          // Fetch friend user data
+          // Fetch friend user data with their profile pictures
           if (userData.friends.length > 0) {
             const friendDocs = await Promise.all(
               userData.friends.map((fid) => getDoc(doc(db, "users", fid)))
             );
             const friendList = friendDocs
               .filter((d) => d.exists())
-              .map((d) => ({ id: d.id, ...d.data() }));
+              .map((d) => {
+                const friendData = d.data();
+                return {
+                  id: d.id,
+                  displayName: friendData.displayName || "User",
+                  username: friendData.username || "",
+                  profilePicUrl: friendData.profilePicUrl || null,
+                  ...friendData
+                };
+              });
+            console.log('Loaded friends with profile pics:', friendList);
             setFriends(friendList);
           } else {
             setFriends([]);
@@ -315,47 +325,67 @@ export default function Profile({ navigation: propNavigation }) {
 
   const pickImage = async () => {
     try {
-      // Try a simpler approach first
       console.log("Starting image picker...");
       
-      // Use a more conservative configuration
+      // Use a conservative configuration to avoid memory issues
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.5, // Lower quality to avoid memory issues
-        base64: false, // Don't request base64 data to avoid memory issues
+        quality: 0.5,
+        base64: false,
       });
       
       console.log("Image picker completed");
       
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        console.log("Image selected, uploading...");
-        // Just update with the URI directly to avoid any processing issues
-        setProfilePicUrl(result.assets[0].uri);
-        
-        // Separate the Firestore update from the image processing
         const currentUser = auth.currentUser;
-        if (currentUser) {
-          setUploadingImage(true);
-          try {
-            const userRef = doc(db, "users", currentUser.uid);
-            await updateDoc(userRef, {
-              profilePicUrl: result.assets[0].uri,
-              updatedAt: new Date().toISOString(),
-            });
-            console.log("Profile picture updated in Firestore");
-          } catch (updateError) {
-            console.error("Error updating Firestore:", updateError);
-          } finally {
-            setUploadingImage(false);
-          }
+        if (!currentUser) return;
+        
+        // First update UI with the local URI for immediate feedback
+        const localUri = result.assets[0].uri;
+        setProfilePicUrl(localUri);
+        setUploadingImage(true);
+        
+        try {
+          // Upload to Firebase Storage
+          const response = await fetch(localUri);
+          const blob = await response.blob();
+          
+          // Create a unique filename using user ID and timestamp
+          const filename = `profile_${currentUser.uid}_${Date.now()}.jpg`;
+          const storageRef = ref(storage, `profile_images/${filename}`);
+          
+          // Upload the image blob to Firebase Storage
+          await uploadBytes(storageRef, blob);
+          console.log("Image uploaded to Firebase Storage");
+          
+          // Get the download URL for the uploaded image
+          const downloadURL = await getDownloadURL(storageRef);
+          console.log("Download URL obtained:", downloadURL);
+          
+          // Now update Firestore with the Firebase Storage URL
+          const userRef = doc(db, "users", currentUser.uid);
+          await updateDoc(userRef, {
+            profilePicUrl: downloadURL,
+            updatedAt: new Date().toISOString(),
+          });
+          
+          // Update state with the Firebase Storage URL
+          setProfilePicUrl(downloadURL);
+          console.log("Profile picture updated in Firestore");
+        } catch (error) {
+          console.error("Error processing image:", error);
+          Alert.alert(
+            "Error",
+            "Failed to upload profile picture. Please try again."
+          );
+        } finally {
+          setUploadingImage(false);
         }
       }
     } catch (error) {
       console.error("Error in image picker:", error);
-      
-      // Show detailed error information
       Alert.alert(
         "Error",
         `Image picker error: ${error.message || 'Unknown error'}`,
@@ -507,20 +537,28 @@ export default function Profile({ navigation: propNavigation }) {
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <View style={styles.friendItem}>
-                  <Image
-                    source={
-                      item.profilePicUrl
-                        ? { uri: item.profilePicUrl }
-                        : require("../../assets/babydoll.jpeg")
-                    }
-                    style={styles.friendProfilePic}
-                  />
-                  <View style={{ marginLeft: 12, flex: 1 }}>
-                    <Text style={styles.friendDisplayName}>
-                      {item.displayName || item.username}
-                    </Text>
-                    <Text style={styles.friendUsername}>@{item.username}</Text>
-                  </View>
+                  <TouchableOpacity 
+                    style={styles.friendContentContainer}
+                    onPress={() => {
+                      setFriendsModalVisible(false);
+                      navigation.navigate("UserProfile", { userId: item.id });
+                    }}
+                  >
+                    <Image
+                      source={
+                        item.profilePicUrl
+                          ? { uri: item.profilePicUrl }
+                          : require("../../assets/babydoll.jpeg")
+                      }
+                      style={styles.friendProfilePic}
+                    />
+                    <View style={{ marginLeft: 12, flex: 1 }}>
+                      <Text style={styles.friendDisplayName}>
+                        {item.displayName || item.username}
+                      </Text>
+                      <Text style={styles.friendUsername}>@{item.username}</Text>
+                    </View>
+                  </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.removeFriendButton}
                     onPress={() => handleRemoveFriend(item.id)}
@@ -1306,24 +1344,6 @@ const styles = StyleSheet.create({
   menuContainer: {
     backgroundColor: theme.background.secondary,
     borderRadius: 12,
-    width: 180,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: theme.background.primary,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.background.primary,
-  },
-  menuIcon: {
-    marginRight: 12,
-  },
-  menuText: {
-    color: theme.text.primary,
     fontSize: 16,
   },
   signOutText: {
@@ -1476,6 +1496,11 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
+  },
+  friendContentContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
   },
   peopleIconButton: {
     marginLeft: 10,

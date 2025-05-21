@@ -23,6 +23,7 @@ import {
   arrayUnion,
   getDoc,
   setDoc,
+  or,
 } from "firebase/firestore";
 import { getTrackDetails, getArtist } from "../../services/spotifyService";
 import { useRoute } from "@react-navigation/native";
@@ -38,12 +39,14 @@ export default function InfoScreen({ route, navigation }) {
   const [isSaved, setIsSaved] = useState(false);
   const [savingItem, setSavingItem] = useState(false);
   const [allReviews, setAllReviews] = useState([]);
+  const [friendReviews, setFriendReviews] = useState([]);
 
   useEffect(() => {
     fetchUserReview();
     fetchTrackDetails();
     checkIfItemIsSaved();
     fetchAllReviews();
+    fetchFriendReviews();
   }, []);
 
   const checkIfItemIsSaved = async () => {
@@ -255,6 +258,42 @@ export default function InfoScreen({ route, navigation }) {
     }
   };
 
+  const fetchFriendReviews = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      const userRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) return;
+      const userData = userDoc.data();
+      const friendIds = userData.friends || [];
+      if (friendIds.length === 0) {
+        setFriendReviews([]);
+        return;
+      }
+      // Firestore doesn't support 'in' with more than 10 elements, so batch if needed
+      let allReviews = [];
+      const batchSize = 10;
+      for (let i = 0; i < friendIds.length; i += batchSize) {
+        const batch = friendIds.slice(i, i + batchSize);
+        const reviewsRef = collection(db, "reviews");
+        const q = query(
+          reviewsRef,
+          where("userId", "in", batch),
+          where("itemId", "==", id),
+          where("itemType", "==", type)
+        );
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+          allReviews.push({ id: doc.id, ...doc.data() });
+        });
+      }
+      setFriendReviews(allReviews);
+    } catch (error) {
+      console.error("Error fetching friend reviews:", error);
+    }
+  };
+
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -289,11 +328,6 @@ export default function InfoScreen({ route, navigation }) {
 
     return stars;
   };
-
-  const friendReviews = [
-    { user: "cjindart", text: "Not really my speed!", rating: 3 },
-    { user: "rpitt", text: "I loved it!", rating: 5.0 },
-  ];
 
   // Calculate average rating for all reviews and friend reviews
   const allRatings = [
@@ -431,7 +465,13 @@ export default function InfoScreen({ route, navigation }) {
                     {item.rating ? item.rating.toFixed(1) : ""}
                   </Text>
                 </View>
-                <Text style={styles.reviewText}>"{item.review}"</Text>
+                <Text
+                  style={styles.reviewText}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  "{item.review}"
+                </Text>
               </View>
             )}
           />
@@ -446,13 +486,15 @@ export default function InfoScreen({ route, navigation }) {
         <View style={styles.divider} />
         <FlatList
           data={friendReviews}
-          keyExtractor={(_, i) => i.toString()}
+          keyExtractor={(item) => item.id}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingVertical: 8 }}
           renderItem={({ item }) => (
             <View style={styles.reviewBlockHorizontal}>
-              <Text style={styles.reviewUser}>{item.user}</Text>
+              <Text style={styles.reviewUser}>
+                {item.userName || item.displayName || item.username || "Friend"}
+              </Text>
               <View style={styles.starsContainer}>
                 {[1, 2, 3, 4, 5].map((star) => {
                   const fullStar = star <= Math.floor(item.rating);
@@ -480,9 +522,18 @@ export default function InfoScreen({ route, navigation }) {
                   {item.rating ? item.rating.toFixed(1) : ""}
                 </Text>
               </View>
-              <Text style={styles.reviewText}>"{item.text}"</Text>
+              <Text
+                style={styles.reviewText}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {item.review ? `"${item.review}"` : ""}
+              </Text>
             </View>
           )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No friend reviews yet</Text>
+          }
         />
 
         {/* Overall Rating */}

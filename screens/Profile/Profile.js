@@ -188,16 +188,17 @@ export default function Profile({ navigation: propNavigation }) {
     }
   };
 
-  const checkUsernameUnique = async (newUsername, currentUsername) => {
-    // If the username hasn't changed, it's still unique
-    if (newUsername === currentUsername) {
-      return true;
-    }
-
+  const checkUsernameUnique = async (newUsername, currentUserId) => {
     const usersRef = collection(db, "users");
     const q = query(usersRef, where("username", "==", newUsername));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.empty;
+    // If there are no users with this username, it's unique
+    if (querySnapshot.empty) return true;
+    // If the only user with this username is the current user, it's also unique
+    if (querySnapshot.size === 1 && querySnapshot.docs[0].id === currentUserId)
+      return true;
+    // Otherwise, it's not unique
+    return false;
   };
 
   const saveProfile = async () => {
@@ -208,7 +209,7 @@ export default function Profile({ navigation: propNavigation }) {
       // Check if username is unique
       const isUsernameUnique = await checkUsernameUnique(
         username,
-        user?.username
+        currentUser.uid
       );
       if (!isUsernameUnique) {
         Alert.alert(
@@ -227,6 +228,21 @@ export default function Profile({ navigation: propNavigation }) {
         username,
         updatedAt: new Date().toISOString(),
       });
+
+      // Update all reviews by this user with new displayName and username
+      const reviewsRef = collection(db, "reviews");
+      const q = query(reviewsRef, where("userId", "==", currentUser.uid));
+      const querySnapshot = await getDocs(q);
+      const batchUpdates = [];
+      querySnapshot.forEach((reviewDoc) => {
+        batchUpdates.push(
+          updateDoc(doc(db, "reviews", reviewDoc.id), {
+            userName: displayName,
+            username: username,
+          })
+        );
+      });
+      await Promise.all(batchUpdates);
 
       setEditMode(false);
       Alert.alert("Success", "Profile updated successfully");
@@ -563,7 +579,18 @@ export default function Profile({ navigation: propNavigation }) {
 
         {/* Profile Header - All Centered */}
         <View style={styles.profileHeaderCentered}>
-          <Text style={styles.displayNameSpotify}>{displayName}</Text>
+          {editMode ? (
+            <TextInput
+              style={styles.editNameInput}
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Display name"
+              placeholderTextColor={theme.text.secondary}
+              maxLength={30}
+            />
+          ) : (
+            <Text style={styles.displayNameSpotify}>{displayName}</Text>
+          )}
           <View style={styles.profileImageContainerSpotify}>
             <Image
               source={
@@ -574,7 +601,22 @@ export default function Profile({ navigation: propNavigation }) {
               style={styles.profileImageSpotify}
             />
           </View>
-          <Text style={styles.usernameSpotify}>@{username}</Text>
+          {editMode ? (
+            <View style={styles.usernameInputContainerCentered}>
+              <Text style={styles.usernamePrefix}>@</Text>
+              <TextInput
+                style={styles.usernameInputCentered}
+                value={username}
+                onChangeText={setUsername}
+                placeholder="username"
+                placeholderTextColor={theme.text.secondary}
+                maxLength={30}
+                autoCapitalize="none"
+              />
+            </View>
+          ) : (
+            <Text style={styles.usernameSpotify}>@{username}</Text>
+          )}
           <View style={styles.followRowSpotifyCentered}>
             <TouchableOpacity onPress={() => setFriendsModalVisible(true)}>
               <Text style={styles.followStatSpotify}>
@@ -999,9 +1041,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.background.secondary,
-    paddingBottom: 5,
+    borderWidth: 1,
+    borderColor: theme.button.primary,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    width: 180,
+    alignSelf: "center",
+    backgroundColor: "transparent",
   },
   usernameInputContainer: {
     flexDirection: "row",
@@ -1353,5 +1400,29 @@ const styles = StyleSheet.create({
     color: theme.text.primary,
     fontSize: 16,
     fontWeight: "bold",
+  },
+  usernameInputContainerCentered: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  usernamePrefix: {
+    color: theme.button.primary,
+    fontSize: 18,
+    fontWeight: "bold",
+    marginRight: 2,
+  },
+  usernameInputCentered: {
+    color: theme.text.primary,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: theme.button.primary,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    width: 140,
+    textAlign: "center",
+    backgroundColor: "transparent",
   },
 });

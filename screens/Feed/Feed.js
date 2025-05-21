@@ -20,7 +20,14 @@ import {
   getFriendActivity,
 } from "../../services/feedService";
 import { auth, db } from "../../firebaseConfig";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { theme } from "../../theme/theme";
 
 const windowWidth = Dimensions.get("window").width;
@@ -34,7 +41,7 @@ export default function Feed({ navigation }) {
   const [popularTracks, setPopularTracks] = useState([]);
   const [featuredContent, setFeaturedContent] = useState([]);
   const [userReviews, setUserReviews] = useState([]);
-  const [friendActivity, setFriendActivity] = useState([]);
+  const [friendReviews, setFriendReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -42,27 +49,22 @@ export default function Feed({ navigation }) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [albums, tracks, featured, activity] = await Promise.all([
+        const [albums, tracks, featured] = await Promise.all([
           getPopularAlbums(),
           getPopularTracks(),
           getFeaturedContent(),
-          getFriendActivity(),
         ]);
-
         setPopularAlbums(albums);
         setPopularTracks(tracks);
         setFeaturedContent(featured);
-        setFriendActivity(activity);
-
-        // Fetch user reviews
         fetchUserReviews();
+        fetchFriendReviews();
       } catch (error) {
         console.error("Error fetching feed data:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -107,25 +109,56 @@ export default function Feed({ navigation }) {
     }
   };
 
+  const fetchFriendReviews = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      const userRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userRef);
+      if (!userDoc.exists()) return;
+      const userData = userDoc.data();
+      const friendIds = userData.friends || [];
+      if (friendIds.length === 0) {
+        setFriendReviews([]);
+        return;
+      }
+      // Fetch reviews for all friends
+      let allReviews = [];
+      for (const fid of friendIds) {
+        const reviewsRef = collection(db, "reviews");
+        const q = query(reviewsRef, where("userId", "==", fid));
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+          allReviews.push({ id: doc.id, ...doc.data() });
+        });
+      }
+      // Sort by most recent first
+      allReviews.sort((a, b) => {
+        const dateA = a.createdAt?.seconds || 0;
+        const dateB = b.createdAt?.seconds || 0;
+        return dateB - dateA;
+      });
+      setFriendReviews(allReviews);
+    } catch (error) {
+      console.error("Error fetching friend reviews:", error);
+    }
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [albums, tracks, featured, activity] = await Promise.all([
+        const [albums, tracks, featured] = await Promise.all([
           getPopularAlbums(),
           getPopularTracks(),
           getFeaturedContent(),
-          getFriendActivity(),
         ]);
-
         setPopularAlbums(albums);
         setPopularTracks(tracks);
         setFeaturedContent(featured);
-        setFriendActivity(activity);
-
-        // Fetch user reviews
         fetchUserReviews();
+        fetchFriendReviews();
       } catch (error) {
         console.error("Error fetching feed data:", error);
       } finally {
@@ -357,12 +390,12 @@ export default function Feed({ navigation }) {
             {/* Friends' Activity Section */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Friends' Activity</Text>
-              {friendActivity.length > 10 && (
+              {friendReviews.length > 10 && (
                 <TouchableOpacity
                   style={styles.viewMoreButton}
                   onPress={() =>
                     navigation.navigate("AllActivity", {
-                      activity: friendActivity,
+                      activity: friendReviews,
                     })
                   }
                 >
@@ -370,7 +403,86 @@ export default function Feed({ navigation }) {
                 </TouchableOpacity>
               )}
             </View>
-            {renderHorizontalList(friendActivity.slice(0, 10))}
+            <FlatList
+              data={friendReviews.slice(0, 10)}
+              horizontal
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.reviewCard}
+                  onPress={() => {
+                    if (item.itemType === "album") {
+                      navigation.navigate("AlbumScreen", {
+                        id: item.itemId,
+                        title: item.itemTitle,
+                        artist: item.itemArtist,
+                        imageUri: item.itemImageUri,
+                        spotifyUri: item.itemSpotifyUri,
+                      });
+                    } else {
+                      navigation.navigate("Info", {
+                        id: item.itemId,
+                        title: item.itemTitle,
+                        artist: item.itemArtist,
+                        imageUri: item.itemImageUri,
+                        type: item.itemType,
+                        spotifyUri: item.itemSpotifyUri,
+                      });
+                    }
+                  }}
+                >
+                  <Image
+                    source={
+                      item.itemImageUri
+                        ? { uri: item.itemImageUri }
+                        : require("../../assets/babydoll.jpeg")
+                    }
+                    style={styles.reviewImage}
+                  />
+                  <View style={styles.reviewContent}>
+                    <Text style={styles.reviewItemTitle} numberOfLines={1}>
+                      {item.itemTitle}
+                    </Text>
+                    <Text style={styles.reviewItemArtist} numberOfLines={1}>
+                      {item.itemArtist}
+                    </Text>
+                    <View style={styles.reviewRating}>
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const fullStar = star <= Math.floor(item.rating);
+                        const halfStar =
+                          !fullStar &&
+                          star === Math.floor(item.rating) + 1 &&
+                          item.rating % 1 !== 0;
+                        return (
+                          <Ionicons
+                            key={star}
+                            name={
+                              fullStar
+                                ? "star"
+                                : halfStar
+                                ? "star-half"
+                                : "star-outline"
+                            }
+                            size={12}
+                            color="#FFD700"
+                          />
+                        );
+                      })}
+                      <Text style={styles.ratingText}>
+                        {item.rating.toFixed(1)}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              )}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16 }}
+              ListEmptyComponent={
+                <Text style={styles.emptyListText}>
+                  No recent friend reviews yet
+                </Text>
+              }
+            />
           </>
         )}
       </ScrollView>

@@ -23,6 +23,7 @@ import {
 
 export default function Signup() {
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -36,9 +37,16 @@ export default function Signup() {
     return querySnapshot.empty;
   };
 
+  const checkDisplayNameUnique = async (displayName) => {
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("displayName", "==", displayName));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.empty;
+  };
+
   const handleSignup = async () => {
     // Validate inputs
-    if (!email || !username || !password || !confirmPassword) {
+    if (!email || !fullName || !username || !password || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
@@ -73,6 +81,17 @@ export default function Signup() {
         return;
       }
 
+      // Check if display name is unique
+      const isDisplayNameUnique = await checkDisplayNameUnique(fullName);
+      if (!isDisplayNameUnique) {
+        Alert.alert(
+          "Error",
+          "This display name is already taken. Please choose another one."
+        );
+        setLoading(false);
+        return;
+      }
+
       // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -84,8 +103,9 @@ export default function Signup() {
       // Create user document in Firestore
       await setDoc(doc(db, "users", user.uid), {
         email: email,
+        fullName: fullName,
         username: username,
-        displayName: username, // Use username as initial display name
+        displayName: fullName, // Use full name as display name
         createdAt: new Date().toISOString(),
         savedItems: [],
         friends: [], // Initialize empty friends array
@@ -137,6 +157,16 @@ export default function Signup() {
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={!loading}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Full Name"
+          placeholderTextColor={theme.text.secondary}
+          value={fullName}
+          onChangeText={setFullName}
+          autoCapitalize="words"
           editable={!loading}
         />
 

@@ -2,17 +2,14 @@
   "expo": {
     "name": "jammin",
     "slug": "jammin",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "jammin",
     "owner": "pittmanriley",
-    "plugins": [
-      "expo-secure-store",
-      "expo-web-browser"
-    ],
+    "plugins": ["expo-secure-store", "expo-web-browser"],
     "experiments": {
       "tsconfigPaths": true
     },
@@ -26,9 +23,7 @@
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": [
-              "jammin"
-            ]
+            "CFBundleURLSchemes": ["jammin"]
           }
         ]
       }
@@ -48,10 +43,7 @@
               "pathPrefix": "/callback"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },

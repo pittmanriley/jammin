@@ -70,7 +70,7 @@ export default function Login() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.header}>Jammin'</Text>
+          <Text style={styles.header}>Jammin!</Text>
           <Text style={styles.subheader}>Your Music Community</Text>
         </View>
 

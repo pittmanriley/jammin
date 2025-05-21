@@ -229,7 +229,7 @@ export default function Feed({ navigation }) {
           style={styles.friendsIcon}
           onPress={() => navigation.navigate("FriendSearch")}
         />
-        <Text style={styles.header}>Jammin'</Text>
+        <Text style={styles.header}>Jammin!</Text>
       </View>
 
       {/* Scrollable content */}
@@ -381,7 +381,10 @@ export default function Feed({ navigation }) {
                   </TouchableOpacity>
                 )}
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+                contentContainerStyle={{
+                  paddingHorizontal: 16,
+                  paddingBottom: 16,
+                }}
               />
             ) : (
               <Text style={styles.emptyListText}>No reviews yet</Text>
@@ -476,7 +479,10 @@ export default function Feed({ navigation }) {
                 </TouchableOpacity>
               )}
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+              contentContainerStyle={{
+                paddingHorizontal: 16,
+                paddingBottom: 16,
+              }}
               ListEmptyComponent={
                 <Text style={styles.emptyListText}>
                   No recent friend reviews yet

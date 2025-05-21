@@ -125,7 +125,7 @@ export default function Signup() {
     <ScrollView style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.header}>Create Account</Text>
-        <Text style={styles.subheader}>Join the Jammin' community</Text>
+        <Text style={styles.subheader}>Join the Jammin! community</Text>
       </View>
 
       <View style={styles.formContainer}>

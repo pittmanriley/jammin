@@ -333,7 +333,7 @@ export default function Profile({ navigation: propNavigation }) {
     try {
       // Use a conservative configuration to avoid memory issues
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: [ImagePicker.MediaType.image], // Updated to use non-deprecated API
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // Return to using MediaTypeOptions for compatibility
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.5,

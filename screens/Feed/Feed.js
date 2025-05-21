@@ -214,7 +214,7 @@ export default function Feed({ navigation }) {
           </TouchableOpacity>
         )}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
       />
     );
   };
@@ -381,7 +381,7 @@ export default function Feed({ navigation }) {
                   </TouchableOpacity>
                 )}
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 16 }}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
               />
             ) : (
               <Text style={styles.emptyListText}>No reviews yet</Text>
@@ -476,7 +476,7 @@ export default function Feed({ navigation }) {
                 </TouchableOpacity>
               )}
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 16 }}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
               ListEmptyComponent={
                 <Text style={styles.emptyListText}>
                   No recent friend reviews yet

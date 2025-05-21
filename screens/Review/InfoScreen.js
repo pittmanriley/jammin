@@ -436,7 +436,7 @@ export default function InfoScreen({ route, navigation }) {
             renderItem={({ item }) => (
               <View style={styles.reviewBlockHorizontal}>
                 <Text style={styles.reviewUser}>
-                  {item.userName || "Unknown"}
+                  @{item.username || "Friend"}
                 </Text>
                 <View style={styles.starsContainer}>
                   {[1, 2, 3, 4, 5].map((star) => {
@@ -493,7 +493,7 @@ export default function InfoScreen({ route, navigation }) {
           renderItem={({ item }) => (
             <View style={styles.reviewBlockHorizontal}>
               <Text style={styles.reviewUser}>
-                {item.userName || item.displayName || item.username || "Friend"}
+                @{item.username || "Friend"}
               </Text>
               <View style={styles.starsContainer}>
                 {[1, 2, 3, 4, 5].map((star) => {

@@ -169,7 +169,9 @@ export default function FriendSearch() {
                 ? { uri: item.profilePicUrl }
                 : require("../../assets/babydoll.jpeg")
             }
+            defaultSource={require("../../assets/babydoll.jpeg")}
             style={styles.resultImage}
+            onError={() => {}}
           />
           <View style={styles.resultTextContainer}>
             <Text style={styles.resultTitle} numberOfLines={1}>

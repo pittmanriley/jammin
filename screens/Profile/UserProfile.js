@@ -55,7 +55,7 @@ export default function UserProfile({ route }) {
       return item.image;
     } else {
       // Return a default image from assets
-      return require("../../assets/babydoll.jpeg");
+      return require("../../assets/profile.jpg");
     }
   };
 
@@ -73,10 +73,20 @@ export default function UserProfile({ route }) {
         setDisplayName(userData.displayName || "User");
         setUsername(userData.username || "");
         setBio(userData.bio || "No bio yet");
-        // Handle profile picture URL - check if it's a Firebase Storage URL
+        // Handle profile picture URL - could be local URI, data URL or Firebase Storage URL
         const photoUrl = userData.profilePicUrl || null;
-        console.log("Profile pic URL from Firestore:", photoUrl);
-        setProfilePicUrl(photoUrl);
+
+        // Check if the URL is valid and set it
+        if (
+          photoUrl &&
+          (photoUrl.startsWith("file:/") ||
+            photoUrl.startsWith("data:image") ||
+            photoUrl.startsWith("https://"))
+        ) {
+          setProfilePicUrl(photoUrl);
+        } else {
+          setProfilePicUrl(null); // Use default image
+        }
 
         // Get their following count
         if (userData.friends && Array.isArray(userData.friends)) {
@@ -217,25 +227,16 @@ export default function UserProfile({ route }) {
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.profilePicWrapper}>
-            {profilePicUrl ? (
-              <Image
-                source={{ uri: profilePicUrl }}
-                style={styles.profilePic}
-                onError={(e) => {
-                  console.log(
-                    "Error loading profile image:",
-                    e.nativeEvent.error
-                  );
-                  // If image fails to load, set to default
-                  setProfilePicUrl(null);
-                }}
-              />
-            ) : (
-              <Image
-                source={require("../../assets/babydoll.jpeg")}
-                style={styles.profilePic}
-              />
-            )}
+            <Image
+              source={
+                profilePicUrl
+                  ? { uri: profilePicUrl }
+                  : require("../../assets/profile.jpg")
+              }
+              defaultSource={require("../../assets/profile.jpg")}
+              style={styles.profilePic}
+              onError={() => setProfilePicUrl(null)}
+            />
           </View>
           <Text style={styles.displayName}>{displayName}</Text>
           <Text style={styles.username}>@{username}</Text>

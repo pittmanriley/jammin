@@ -18,6 +18,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { auth, db, storage } from "../../firebaseConfig";
 import { signOut } from "firebase/auth";
+// Firebase Storage imports are below
 import {
   doc,
   getDoc,
@@ -31,7 +32,12 @@ import {
 import { disconnectSpotify } from "../../services/spotifyService";
 import { useSpotifyStats } from "../../contexts/SpotifyStatsContext";
 import * as ImagePicker from "expo-image-picker";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import {
+  ref,
+  uploadBytes,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
 import { theme } from "../../theme/theme";
 
 const windowWidth = Dimensions.get("window").width;
@@ -141,7 +147,7 @@ export default function Profile({ navigation: propNavigation }) {
         setProfilePicUrl(
           userData.profilePicUrl ||
             currentUser.photoURL ||
-            require("../../assets/dummy profile.jpg")
+            require("../../assets/profile.jpg")
         );
         setUsername(userData.username || "");
 
@@ -166,10 +172,10 @@ export default function Profile({ navigation: propNavigation }) {
                   displayName: friendData.displayName || "User",
                   username: friendData.username || "",
                   profilePicUrl: friendData.profilePicUrl || null,
-                  ...friendData
+                  ...friendData,
                 };
               });
-            console.log('Loaded friends with profile pics:', friendList);
+            // Friends loaded successfully
             setFriends(friendList);
           } else {
             setFriends([]);
@@ -325,72 +331,74 @@ export default function Profile({ navigation: propNavigation }) {
 
   const pickImage = async () => {
     try {
-      console.log("Starting image picker...");
-      
       // Use a conservative configuration to avoid memory issues
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: [ImagePicker.MediaType.image], // Updated to use non-deprecated API
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.5,
-        base64: false,
+        base64: true, // Use base64 encoding to store the image directly in Firestore
       });
-      
-      console.log("Image picker completed");
-      
+
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const currentUser = auth.currentUser;
         if (!currentUser) return;
-        
-        // First update UI with the local URI for immediate feedback
-        const localUri = result.assets[0].uri;
-        setProfilePicUrl(localUri);
+
         setUploadingImage(true);
-        
+
         try {
-          // Upload to Firebase Storage
-          const response = await fetch(localUri);
-          const blob = await response.blob();
-          
-          // Create a unique filename using user ID and timestamp
-          const filename = `profile_${currentUser.uid}_${Date.now()}.jpg`;
-          const storageRef = ref(storage, `profile_images/${filename}`);
-          
-          // Upload the image blob to Firebase Storage
-          await uploadBytes(storageRef, blob);
-          console.log("Image uploaded to Firebase Storage");
-          
-          // Get the download URL for the uploaded image
-          const downloadURL = await getDownloadURL(storageRef);
-          console.log("Download URL obtained:", downloadURL);
-          
-          // Now update Firestore with the Firebase Storage URL
-          const userRef = doc(db, "users", currentUser.uid);
-          await updateDoc(userRef, {
-            profilePicUrl: downloadURL,
-            updatedAt: new Date().toISOString(),
-          });
-          
-          // Update state with the Firebase Storage URL
-          setProfilePicUrl(downloadURL);
-          console.log("Profile picture updated in Firestore");
+          // Get the local URI for immediate feedback on this device
+          const localUri = result.assets[0].uri;
+
+          // First update UI with the local URI for immediate feedback
+          setProfilePicUrl(localUri);
+
+          // Convert to data URL and store in Firestore (works for small images)
+          const base64 = result.assets[0].base64;
+
+          if (base64) {
+            const dataUrl = `data:image/jpeg;base64,${base64}`;
+            // Store the data URL in Firestore
+            await saveProfilePicToFirestore(dataUrl);
+          } else {
+            // Fallback to local URI if base64 is not available
+            await saveProfilePicToFirestore(localUri);
+          }
         } catch (error) {
-          console.error("Error processing image:", error);
           Alert.alert(
             "Error",
-            "Failed to upload profile picture. Please try again."
+            "Failed to update profile picture. Please try again."
           );
-        } finally {
           setUploadingImage(false);
         }
       }
     } catch (error) {
-      console.error("Error in image picker:", error);
       Alert.alert(
         "Error",
-        `Image picker error: ${error.message || 'Unknown error'}`,
+        `Image picker error: ${error.message || "Unknown error"}`,
         [{ text: "OK" }]
       );
+    }
+  };
+
+  // Helper function to save profile picture URL to Firestore
+  const saveProfilePicToFirestore = async (url) => {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+
+      const userRef = doc(db, "users", currentUser.uid);
+      await updateDoc(userRef, {
+        profilePicUrl: url,
+        updatedAt: new Date().toISOString(),
+      });
+
+      // Update local state
+      setProfilePicUrl(url);
+    } catch (error) {
+      // Silently handle errors
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -404,7 +412,7 @@ export default function Profile({ navigation: propNavigation }) {
       return item.image;
     } else {
       // Return a default image from assets
-      return require("../../assets/babydoll.jpeg");
+      return require("../../assets/profile.jpg");
     }
   };
 
@@ -537,7 +545,7 @@ export default function Profile({ navigation: propNavigation }) {
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <View style={styles.friendItem}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.friendContentContainer}
                     onPress={() => {
                       setFriendsModalVisible(false);
@@ -548,15 +556,19 @@ export default function Profile({ navigation: propNavigation }) {
                       source={
                         item.profilePicUrl
                           ? { uri: item.profilePicUrl }
-                          : require("../../assets/babydoll.jpeg")
+                          : require("../../assets/profile.jpg")
                       }
+                      defaultSource={require("../../assets/profile.jpg")}
                       style={styles.friendProfilePic}
+                      onError={() => {}}
                     />
                     <View style={{ marginLeft: 12, flex: 1 }}>
                       <Text style={styles.friendDisplayName}>
                         {item.displayName || item.username}
                       </Text>
-                      <Text style={styles.friendUsername}>@{item.username}</Text>
+                      <Text style={styles.friendUsername}>
+                        @{item.username}
+                      </Text>
                     </View>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -657,7 +669,7 @@ export default function Profile({ navigation: propNavigation }) {
                   source={
                     profilePicUrl
                       ? { uri: profilePicUrl }
-                      : require("../../assets/babydoll.jpeg")
+                      : require("../../assets/profile.jpg")
                   }
                   style={styles.profilePic}
                 />
@@ -803,7 +815,7 @@ export default function Profile({ navigation: propNavigation }) {
                       source={
                         item.track.album?.images?.[0]?.url
                           ? { uri: item.track.album.images[0].url }
-                          : require("../../assets/babydoll.jpeg")
+                          : require("../../assets/profile.jpg")
                       }
                       style={styles.image}
                     />
@@ -855,7 +867,7 @@ export default function Profile({ navigation: propNavigation }) {
                     source={
                       item.album?.images?.[0]?.url
                         ? { uri: item.album.images[0].url }
-                        : require("../../assets/babydoll.jpeg")
+                        : require("../../assets/profile.jpg")
                     }
                     style={styles.image}
                   />
@@ -944,7 +956,7 @@ export default function Profile({ navigation: propNavigation }) {
                   source={
                     review.itemImageUri
                       ? { uri: review.itemImageUri }
-                      : require("../../assets/babydoll.jpeg")
+                      : require("../../assets/profile.jpg")
                   }
                   style={styles.reviewImage}
                 />
@@ -1344,10 +1356,26 @@ const styles = StyleSheet.create({
   menuContainer: {
     backgroundColor: theme.background.secondary,
     borderRadius: 12,
-    fontSize: 16,
+    width: 180,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   signOutText: {
     color: "#ff6b6b",
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  menuText: {
+    fontSize: 16,
+    marginLeft: 12,
+    color: theme.text.primary,
+  },
+  menuIcon: {
+    width: 24,
   },
   menuButton: {
     padding: 8,
@@ -1514,7 +1542,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 16,
   },
   profilePic: {
@@ -1524,8 +1552,8 @@ const styles = StyleSheet.create({
   },
   uploadingContainer: {
     backgroundColor: theme.background.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   editProfilePicOverlay: {
     position: "absolute",

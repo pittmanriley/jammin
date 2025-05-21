@@ -433,6 +433,22 @@ export default function Profile({ navigation: propNavigation }) {
     );
   };
 
+  const handleRemoveFriend = async (friendId) => {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+      const userRef = doc(db, "users", currentUser.uid);
+      await updateDoc(userRef, {
+        friends: friends.filter((f) => f.id !== friendId).map((f) => f.id),
+      });
+      setFriends(friends.filter((f) => f.id !== friendId));
+      Alert.alert("Removed", "Friend removed successfully.");
+    } catch (error) {
+      console.error("Error removing friend:", error);
+      Alert.alert("Error", "Failed to remove friend. Please try again.");
+    }
+  };
+
   // Reviews functionality will be implemented in a future update
 
   return (
@@ -504,12 +520,18 @@ export default function Profile({ navigation: propNavigation }) {
                     }
                     style={styles.friendProfilePic}
                   />
-                  <View style={{ marginLeft: 12 }}>
+                  <View style={{ marginLeft: 12, flex: 1 }}>
                     <Text style={styles.friendDisplayName}>
                       {item.displayName || item.username}
                     </Text>
                     <Text style={styles.friendUsername}>@{item.username}</Text>
                   </View>
+                  <TouchableOpacity
+                    style={styles.removeFriendButton}
+                    onPress={() => handleRemoveFriend(item.id)}
+                  >
+                    <Ionicons name="trash" size={20} color="#ff6b6b" />
+                  </TouchableOpacity>
                 </View>
               )}
               ListEmptyComponent={
@@ -613,11 +635,20 @@ export default function Profile({ navigation: propNavigation }) {
             <Text style={styles.usernameSpotify}>@{username}</Text>
           )}
           <View style={styles.followRowSpotifyCentered}>
-            <TouchableOpacity onPress={() => setFriendsModalVisible(true)}>
+            <TouchableOpacity
+              onPress={() => setFriendsModalVisible(true)}
+              style={{ flexDirection: "row", alignItems: "center" }}
+            >
               <Text style={styles.followStatSpotify}>
                 <Text style={styles.followNumberSpotify}>{friends.length}</Text>{" "}
                 following
               </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.peopleIconButton}
+              onPress={() => navigation.navigate("FriendSearch")}
+            >
+              <Ionicons name="people" size={22} color={theme.button.primary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -1424,5 +1455,21 @@ const styles = StyleSheet.create({
     width: 140,
     textAlign: "center",
     backgroundColor: "transparent",
+  },
+  removeFriendButton: {
+    marginLeft: 8,
+    padding: 6,
+    borderRadius: 16,
+    backgroundColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  peopleIconButton: {
+    marginLeft: 10,
+    padding: 6,
+    borderRadius: 16,
+    backgroundColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

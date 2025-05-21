@@ -16,6 +16,8 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import InfoScreen from "../screens/Review/InfoScreen";
 import NewPost from "../screens/Review/NewPost";
 import Stats from "../screens/Profile/Stats";
+import TopTracks from "../screens/Profile/TopTracks";
+import TopArtists from "../screens/Profile/TopArtists";
 import AllAlbums from "../screens/Feed/AllAlbums";
 import AllSongs from "../screens/Feed/AllSongs";
 import AllReviews from "../screens/Profile/AllReviews";
@@ -93,6 +95,16 @@ export default function RootNavigator() {
         <Stack.Screen
           name="Stats"
           component={Stats}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="TopTracks"
+          component={TopTracks}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="TopArtists"
+          component={TopArtists}
           options={{ headerShown: false }}
         />
         <Stack.Screen

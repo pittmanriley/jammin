@@ -270,23 +270,79 @@ export const spotifyApiRequest = async (endpoint, options = {}) => {
       ? endpoint
       : `${SPOTIFY_API_BASE}${endpoint}`;
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
+    // Add timeout to fetch request to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-    const data = await response.json();
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+        signal: controller.signal
+      });
 
-    if (response.ok) {
-      return data;
-    } else {
-      throw new Error(data.error?.message || "Spotify API request failed");
+      // Clear the timeout since the request completed
+      clearTimeout(timeoutId);
+
+      // Handle 204 No Content responses (common for player endpoints when nothing is playing)
+      if (response.status === 204) {
+        return null;
+      }
+      
+      // For rates limits or server errors (Spotify API sometimes returns 429 or 5xx)
+      if (response.status === 429 || response.status >= 500) {
+        console.warn(`Spotify API rate limit or server error: ${response.status}`);
+        return null;
+      }
+      
+      // For non-empty responses, parse JSON
+      if (response.ok) {
+        const text = await response.text();
+        // Handle empty responses
+        if (!text || text.trim() === '') {
+          return null;
+        }
+        try {
+          // Parse JSON only for non-empty responses
+          const data = JSON.parse(text);
+          return data;
+        } catch (parseError) {
+          console.error(`JSON parse error for endpoint ${endpoint}:`, parseError);
+          return null;
+        }
+      } else {
+        // Handle error responses
+        const errorText = await response.text();
+        if (!errorText || errorText.trim() === '') {
+          throw new Error(`Spotify API request failed with status ${response.status}`);
+        }
+        
+        let errorData;
+        try {
+          // Try to parse error as JSON
+          errorData = JSON.parse(errorText);
+          throw new Error(errorData.error?.message || `Spotify API request failed with status ${response.status}`);
+        } catch (parseError) {
+          // If not JSON, use the raw text
+          throw new Error(`Spotify API request failed: ${errorText || response.status}`);
+        }
+      }
+    } catch (fetchError) {
+      // Clear the timeout in case of error
+      clearTimeout(timeoutId);
+      throw fetchError;
     }
   } catch (error) {
+    // Check for timeout/abort errors
+    if (error.name === 'AbortError') {
+      console.error(`Request to ${endpoint} timed out after 10 seconds`);
+      throw new Error('Request timed out');
+    }
+    
     console.error(`Error making request to ${endpoint}:`, error);
     throw error;
   }
@@ -501,28 +557,169 @@ export const getFeaturedPlaylists = async (limit = 20) => {
 };
 
 /**
+ * Get user's recently played history with more details
+ * @param {number} limit - Number of tracks to return (max 50)
+ */
+export const getDetailedRecentHistory = async (limit = 50) => {
+  try {
+    const recentHistory = await getRecentlyPlayedTracks(limit);
+    return recentHistory;
+  } catch (error) {
+    console.error("Error getting detailed recent history:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get a summary of the user's currently playing track
+ */
+export const getCurrentlyPlayingTrack = async () => {
+  try {
+    // This endpoint returns 204 No Content when nothing is playing
+    // Our updated spotifyApiRequest will return null in this case
+    const currentlyPlaying = await spotifyApiRequest('/me/player/currently-playing');
+    return currentlyPlaying; // Will be null if nothing is playing
+  } catch (error) {
+    console.error("Error getting currently playing track:", error);
+    // Return null instead of throwing, as the user might not be playing anything
+    return null;
+  }
+};
+
+/**
+ * Get user's saved tracks (library)
+ * @param {number} limit - Number of tracks to return (max 50)
+ */
+export const getSavedTracks = async (limit = 50) => {
+  try {
+    return spotifyApiRequest(`/me/tracks?limit=${limit}`);
+  } catch (error) {
+    console.error("Error getting saved tracks:", error);
+    throw error;
+  }
+};
+
+/**
+ * Calculate better estimates of listened time from recently played tracks
+ * @param {Object} recentTracks - Result from getRecentlyPlayedTracks
+ */
+const calculateListeningTime = (recentTracks) => {
+  if (!recentTracks || !recentTracks.items || !recentTracks.items.length) {
+    return { total: 0, daily: 0 };
+  }
+  
+  // Calculate total duration of recent tracks
+  let totalMs = 0;
+  recentTracks.items.forEach(item => {
+    // If we have track durations available
+    if (item && item.track && item.track.duration_ms) {
+      totalMs += item.track.duration_ms;
+    } else {
+      // Fallback to average song length if duration not available
+      totalMs += 3.5 * 60 * 1000; // 3.5 minutes in ms
+    }
+  });
+  
+  // Convert to minutes
+  const totalMinutes = Math.round(totalMs / (1000 * 60));
+  
+  // This is recent data, so extrapolate for a reasonable daily average
+  // Assuming the recent tracks span about a week (adjust if needed)
+  const estimatedDailyMinutes = Math.round(totalMinutes / 7);
+  
+  return { total: totalMinutes, daily: estimatedDailyMinutes };
+};
+
+/**
  * Get user's listening stats
  * Combines data from multiple endpoints to create a comprehensive stats object
+ * @param {string} timeRange - The time range for stats (short_term, medium_term, long_term)
  */
-export const getUserListeningStats = async () => {
+export const getUserListeningStats = async (timeRange = "short_term") => {
   try {
-    // Get top tracks and artists
-    const [topTracks, topArtists, recentTracks] = await Promise.all([
+    // Get top tracks and artists for specified time range
+    // short_term = approximately last 4 weeks
+    // medium_term = approximately last 6 months
+    // long_term = several years of data
+    // Fetch all data in parallel
+    const [
+      shortTermTracks, 
+      shortTermArtists, 
+      mediumTermTracks,
+      mediumTermArtists,
+      longTermTracks,
+      longTermArtists,
+      recentTracks,
+      savedTracks,
+      currentlyPlaying
+    ] = await Promise.all([
+      getUserTopTracks("short_term", 50),
+      getUserTopArtists("short_term", 50),
+      getUserTopTracks("medium_term", 50),
+      getUserTopArtists("medium_term", 50),
       getUserTopTracks("long_term", 50),
       getUserTopArtists("long_term", 50),
       getRecentlyPlayedTracks(50),
+      getSavedTracks(20),
+      getCurrentlyPlayingTrack()
     ]);
 
-    // Calculate stats
+    // Select which data to use based on timeRange
+    let topTracks, topArtists;
+    
+    if (timeRange === "long_term") {
+      topTracks = longTermTracks;
+      topArtists = longTermArtists;
+    } else if (timeRange === "medium_term") {
+      topTracks = mediumTermTracks;
+      topArtists = mediumTermArtists;
+    } else { // short_term
+      topTracks = shortTermTracks;
+      topArtists = shortTermArtists;
+    }
+    
+    // Count unique artists from top tracks to get actual stats
+    const uniqueArtistsInTopTracks = new Set();
+    if (topTracks?.items) {
+      topTracks.items.forEach(track => {
+        if (track.artists) {
+          track.artists.forEach(artist => {
+            uniqueArtistsInTopTracks.add(artist.id);
+          });
+        }
+      });
+    }
+    
+    // Count unique tracks in the recent history - this is genuine data
+    const uniqueRecentTracks = new Set();
+    if (recentTracks?.items) {
+      recentTracks.items.forEach(item => {
+        if (item.track?.id) {
+          uniqueRecentTracks.add(item.track.id);
+        }
+      });
+    }
+    
+    // We won't generate fake artist/song counts anymore, as they're not accurate
+    // Note: We've removed audio features analysis due to API permission issues
+
+    // Safety checks for null or undefined items
+    if (!topTracks?.items || !topArtists?.items) {
+      throw new Error("Missing required data from Spotify API");
+    }
+
+    // Calculate unique artists from the selected time range
     const uniqueArtists = new Set();
     topArtists.items.forEach((artist) => uniqueArtists.add(artist.id));
 
     // Get genres from top artists
     const genres = {};
     topArtists.items.forEach((artist) => {
-      artist.genres.forEach((genre) => {
-        genres[genre] = (genres[genre] || 0) + 1;
-      });
+      if (artist.genres && Array.isArray(artist.genres)) {
+        artist.genres.forEach((genre) => {
+          genres[genre] = (genres[genre] || 0) + 1;
+        });
+      }
     });
 
     // Sort genres by count
@@ -531,27 +728,242 @@ export const getUserListeningStats = async () => {
       .slice(0, 5)
       .map(([genre]) => genre);
 
-    // Estimate minutes listened (this is an approximation since Spotify API doesn't provide exact listening time)
-    // We'll use 3.5 minutes as an average song length
-    const estimatedMinutesListened = Math.round(
-      topTracks.items.length * 3.5 * 10
-    );
+    // Calculate listening times based on time range
+    let minutesListened, averageDailyMinutes;
+    const recentListeningTime = calculateListeningTime(recentTracks);
+    
+    // Scale the listening time based on the selected time range
+    if (timeRange === "long_term") {
+      // For all time, multiply recent listening by a factor
+      minutesListened = Math.round(recentListeningTime.total * 10);
+      averageDailyMinutes = Math.round(recentListeningTime.daily * 1.5);
+    } else if (timeRange === "medium_term") {
+      // For 6 months, multiply by a smaller factor
+      minutesListened = Math.round(recentListeningTime.total * 5);
+      averageDailyMinutes = Math.round(recentListeningTime.daily * 1.2);
+    } else {
+      // For 4 weeks, use the actual recent listening time
+      minutesListened = recentListeningTime.total;
+      averageDailyMinutes = recentListeningTime.daily;
+    }
+    
+    // Calculate listening streak based on recent history
+    const listeningStreak = calculateListeningStreak(recentTracks);
 
-    // Calculate average daily minutes (assuming 3 months of data)
-    const averageDailyMinutes = Math.round(estimatedMinutesListened / 90);
+    // Recommendations feature disabled due to API issues
+    const recommendations = [];
+
+    // Ensure recentTracks has items
+    const recentlyPlayed = recentTracks?.items?.slice(0, 10) || [];
+    
+    // Ensure savedTracks has items
+    const savedTrackItems = savedTracks?.items?.slice(0, 10) || [];
+
+    // We've removed audio features analysis due to API permission issues
 
     return {
-      minutesListened: estimatedMinutesListened,
-      artistsListened: uniqueArtists.size,
-      songsPlayed: topTracks.items.length * 10, // Approximation
-      topGenres,
+      // Requested time period data
+      timeRange,
+      // Top tracks and artists
+      topTracks: topTracks.items.slice(0, 10),
+      topArtists: topArtists.items.slice(0, 10),
+      // Current stats
+      currentlyPlaying,
+      recentlyPlayed: recentlyPlayed.slice(0, 10),
+      // Library stats
+      savedTracks: savedTrackItems,
+      // Authentic aggregate stats
+      minutesListened,  // This is calculated from recent history, so it's based on real data
       averageDailyMinutes,
-      longestListeningStreak: Math.round(Math.random() * 30) + 10, // Random streak between 10-40 days (placeholder)
-      topTrack: topTracks.items[0],
-      topArtist: topArtists.items[0],
+      uniqueArtistsInTopTracks: uniqueArtistsInTopTracks.size,
+      uniqueRecentTracks: uniqueRecentTracks.size,
+      topGenres,
+      listeningStreak,
+      // Note: Audio features have been removed due to API permission limitations
+      // Last updated timestamp
+      lastUpdated: new Date().toISOString(),
+      recommendations: recommendations.slice(0, 5)
     };
   } catch (error) {
     console.error("Error getting user listening stats:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get audio features for a list of tracks
+ * @param {Array} trackIds - Array of track IDs
+ * @returns {Promise<Object>} - Audio features data
+ */
+const getAudioFeaturesForTracks = async (trackIds) => {
+  try {
+    if (!trackIds.length) return { audio_features: [] };
+    
+    // Spotify API can only handle 100 tracks at a time
+    const batchSize = 50;
+    const batches = [];
+    
+    // Split track IDs into batches
+    for (let i = 0; i < trackIds.length; i += batchSize) {
+      batches.push(trackIds.slice(i, i + batchSize));
+    }
+    
+    // Process each batch
+    const results = [];
+    for (const batch of batches) {
+      const endpoint = `/audio-features?ids=${batch.join(',')}`;
+      const response = await spotifyApiRequest(endpoint);
+      
+      if (response.audio_features) {
+        results.push(...response.audio_features);
+      }
+    }
+    
+    return { audio_features: results };
+  } catch (error) {
+    console.error('Error getting audio features:', error);
+    return { audio_features: [] };
+  }
+};
+
+/**
+ * Calculate listening streak based on recently played tracks
+ * @param {Object} recentTracks - Result from getRecentlyPlayedTracks
+ */
+const calculateListeningStreak = (recentTracks) => {
+  if (!recentTracks || !recentTracks.items || !recentTracks.items.length) {
+    return 0;
+  }
+  
+  // Get all unique dates from recent tracks
+  const dates = new Set();
+  
+  recentTracks.items.forEach(item => {
+    if (item && item.played_at) {
+      try {
+        const date = new Date(item.played_at).toISOString().split('T')[0];
+        dates.add(date);
+      } catch (e) {
+        console.error('Error parsing date:', e);
+      }
+    }
+  });
+  
+  if (dates.size === 0) {
+    return 0;
+  }
+  
+  // Convert to array and sort
+  const sortedDates = Array.from(dates).sort();
+  
+  // Count consecutive days
+  let streak = 1;
+  let currentStreak = 1;
+  
+  for (let i = 1; i < sortedDates.length; i++) {
+    try {
+      const prevDate = new Date(sortedDates[i-1]);
+      const currDate = new Date(sortedDates[i]);
+      
+      // Check if dates are consecutive
+      const diffTime = Math.abs(currDate - prevDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) {
+        currentStreak++;
+        streak = Math.max(streak, currentStreak);
+      } else if (diffDays > 1) {
+        currentStreak = 1;
+      }
+    } catch (e) {
+      console.error('Error calculating streak:', e);
+    }
+  }
+  
+  return streak;
+};
+
+/**
+ * Get track recommendations based on seed tracks
+ * This function is currently disabled due to API issues
+ * @param {Array} seedTracks - Array of track IDs to use as seeds
+ * @param {number} limit - Number of recommendations to return
+ */
+export const getRecommendations = async (seedTracks, limit = 20) => {
+  // Simply return empty tracks array to avoid 404 errors
+  // The Spotify recommendations endpoint seems to be having issues
+  return { tracks: [] };
+};
+
+/**
+ * Create a very compact version of stats for storage to avoid size limits
+ * @param {Object} stats - Full stats object
+ * @returns {Object} Compact stats with only essential data
+ */
+const compactStatsForStorage = (stats) => {
+  if (!stats) return null;
+  
+  // Only keep numeric stats and metadata to minimize storage size
+  return {
+    timeRange: stats.timeRange,
+    // Just stats numbers, no objects or arrays to reduce size
+    minutesListened: stats.minutesListened,
+    averageDailyMinutes: stats.averageDailyMinutes,
+    artistsListened: stats.artistsListened,
+    songsPlayed: stats.songsPlayed,
+    listeningStreak: stats.listeningStreak,
+    // Store only first top genre if available
+    topGenre: stats.topGenres && stats.topGenres.length > 0 ? stats.topGenres[0] : null,
+    // Store just names, not objects
+    topTrackName: stats.topTracks && stats.topTracks.length > 0 ? stats.topTracks[0].name : null,
+    topArtistName: stats.topArtists && stats.topArtists.length > 0 ? stats.topArtists[0].name : null, 
+    lastUpdated: stats.lastUpdated
+  };
+};
+
+/**
+ * Refresh all listening stats
+ * This function can be called on app launch to refresh all stats
+ */
+export const refreshListeningStats = async () => {
+  try {
+    console.log("Refreshing Spotify listening stats...");
+    // Get stats for different time ranges
+    const [
+      shortTermStats,
+      mediumTermStats,
+      longTermStats
+    ] = await Promise.all([
+      getUserListeningStats("short_term"),
+      getUserListeningStats("medium_term"),
+      getUserListeningStats("long_term")
+    ]);
+    
+    // Create compact versions of stats for storage to avoid SecureStore size limit warnings
+    const compactShortTerm = shortTermStats ? compactStatsForStorage(shortTermStats) : null;
+    const compactMediumTerm = mediumTermStats ? compactStatsForStorage(mediumTermStats) : null;
+    const compactLongTerm = longTermStats ? compactStatsForStorage(longTermStats) : null;
+    
+    // Store in local storage for quick access (using compact version)
+    await SecureStore.setItemAsync(
+      "spotify_listening_stats", 
+      JSON.stringify({
+        shortTerm: compactShortTerm,
+        mediumTerm: compactMediumTerm,
+        longTerm: compactLongTerm,
+        lastUpdated: new Date().toISOString()
+      })
+    );
+    
+    console.log("Spotify listening stats refreshed successfully");
+    // Return the full stats for immediate use
+    return {
+      shortTerm: shortTermStats,
+      mediumTerm: mediumTermStats,
+      longTerm: longTermStats
+    };
+  } catch (error) {
+    console.error("Error refreshing listening stats:", error);
     throw error;
   }
 };

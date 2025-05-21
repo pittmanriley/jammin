@@ -8,12 +8,14 @@ import {
   ActivityIndicator,
   Image,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import {
   getUserListeningStats,
   isSpotifyConnected,
 } from "../../services/spotifyService";
+import { useSpotifyStats } from "../../contexts/SpotifyStatsContext";
 import { theme } from "../../theme/theme";
 
 const windowWidth = Dimensions.get("window").width;
@@ -22,30 +24,125 @@ export default function Stats({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [timeRange, setTimeRange] = useState("short_term"); // short_term, medium_term, long_term
+
+  // Get stats from our SpotifyStatsContext
+  const {
+    shortTerm,
+    mediumTerm,
+    longTerm,
+    lastUpdated,
+    refreshStats,
+    isLoading: contextLoading,
+  } = useSpotifyStats();
+
+  // Select stats based on the chosen time range
+  const getStatsForTimeRange = () => {
+    let stats;
+    switch (timeRange) {
+      case "medium_term":
+        stats = mediumTerm || {};
+        break;
+      case "long_term":
+        stats = longTerm || {};
+        break;
+      case "short_term":
+      default:
+        stats = shortTerm || {};
+        break;
+    }
+
+    // Ensure all required properties exist
+    return {
+      minutesListened: stats.minutesListened || 0,
+      artistsListened: stats.artistsListened || 0,
+      songsPlayed: stats.songsPlayed || 0,
+      topGenres: stats.topGenres || [],
+      averageDailyMinutes: stats.averageDailyMinutes || 0,
+      listeningStreak: stats.listeningStreak || 0,
+      topTracks: stats.topTracks || [],
+      topArtists: stats.topArtists || [],
+      currentlyPlaying: stats.currentlyPlaying || null,
+      recentlyPlayed: stats.recentlyPlayed || [],
+      ...(stats.topGenre ? { topGenres: [stats.topGenre] } : {}), // Convert single topGenre to array if it exists
+    };
+  };
+
   const [listeningStats, setListeningStats] = useState({
     minutesListened: 0,
     artistsListened: 0,
     songsPlayed: 0,
     topGenres: [],
     averageDailyMinutes: 0,
-    longestListeningStreak: 0,
-    topTrack: null,
-    topArtist: null,
+    listeningStreak: 0,
+    topTracks: [],
+    topArtists: [],
+    currentlyPlaying: null,
+    recentlyPlayed: [],
   });
 
+  // Update local stats whenever time range changes or stats are refreshed
   useEffect(() => {
-    checkSpotifyAndLoadStats();
+    const statsForRange = getStatsForTimeRange();
+    if (statsForRange) {
+      setListeningStats(statsForRange);
+      setLoading(false);
+
+      // If we changed time range but don't have top tracks/artists data, fetch it
+      if (
+        !statsForRange.topTracks?.length ||
+        !statsForRange.topArtists?.length
+      ) {
+        const loadTimeRangeData = async () => {
+          try {
+            setLoading(true);
+            await refreshStats(true);
+          } catch (err) {
+            console.error(`Error loading ${timeRange} data:`, err);
+          } finally {
+            setLoading(false);
+          }
+        };
+        loadTimeRangeData();
+      }
+    }
+  }, [timeRange, shortTerm, mediumTerm, longTerm]);
+
+  // Check if connected to Spotify and load initial stats on mount
+  useEffect(() => {
+    const initializeStats = async () => {
+      await checkSpotifyConnection();
+
+      // If we have context data but no tracks/artists showing, force a refresh
+      const statsForRange = getStatsForTimeRange();
+      if (
+        statsForRange &&
+        (!statsForRange.topTracks?.length || !statsForRange.topArtists?.length)
+      ) {
+        console.log("Missing top tracks/artists data, refreshing...");
+        try {
+          setLoading(true);
+          await refreshStats(true);
+        } catch (err) {
+          console.error("Error refreshing stats:", err);
+          setError("Failed to load your stats. Please try again.");
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeStats();
   }, []);
 
-  const checkSpotifyAndLoadStats = async () => {
+  // Check if user is connected to Spotify
+  const checkSpotifyConnection = async () => {
     try {
       const connected = await isSpotifyConnected();
       setSpotifyConnected(connected);
 
-      if (connected) {
-        const stats = await getUserListeningStats();
-        setListeningStats(stats);
-      } else {
+      if (!connected) {
         // Use mock data if not connected to Spotify
         setListeningStats({
           minutesListened: 12467,
@@ -53,23 +150,30 @@ export default function Stats({ navigation }) {
           songsPlayed: 1892,
           topGenres: ["Pop", "Hip-Hop", "Indie", "R&B", "Rock"],
           averageDailyMinutes: 78,
-          longestListeningStreak: 42,
+          listeningStreak: 42,
+          topTracks: [],
+          topArtists: [],
         });
+        setLoading(false);
       }
     } catch (err) {
-      console.error(`Error loading stats: ${err.message}`);
-      setError("Failed to load your listening stats. Please try again.");
-      // Fallback to mock data on error
-      setListeningStats({
-        minutesListened: 12467,
-        artistsListened: 143,
-        songsPlayed: 1892,
-        topGenres: ["Pop", "Hip-Hop", "Indie", "R&B", "Rock"],
-        averageDailyMinutes: 78,
-        longestListeningStreak: 42,
-      });
-    } finally {
+      console.error(`Error checking Spotify connection: ${err.message}`);
+      setError("Failed to check Spotify connection. Please try again.");
       setLoading(false);
+    }
+  };
+
+  // Handle manual refresh
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      setError(null);
+      await refreshStats(true); // Force refresh
+    } catch (err) {
+      console.error(`Error refreshing stats: ${err.message}`);
+      setError("Failed to refresh your listening stats. Please try again.");
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -84,7 +188,7 @@ export default function Stats({ navigation }) {
     return `${hours} hr ${minutes} min`;
   };
 
-  if (loading) {
+  if (loading || contextLoading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#1DB954" />
@@ -123,29 +227,146 @@ export default function Stats({ navigation }) {
         </View>
       )}
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={["#1DB954"]}
+            tintColor={"#1DB954"}
+          />
+        }
+      >
+        {/* Time Range Selector */}
+        <View style={styles.timeRangeContainer}>
+          <TouchableOpacity
+            style={[
+              styles.timeRangeButton,
+              timeRange === "short_term" && styles.activeTimeRange,
+            ]}
+            onPress={() => setTimeRange("short_term")}
+          >
+            <Text
+              style={[
+                styles.timeRangeText,
+                timeRange === "short_term" && styles.activeTimeRangeText,
+              ]}
+            >
+              1 Month
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.timeRangeButton,
+              timeRange === "medium_term" && styles.activeTimeRange,
+            ]}
+            onPress={() => setTimeRange("medium_term")}
+          >
+            <Text
+              style={[
+                styles.timeRangeText,
+                timeRange === "medium_term" && styles.activeTimeRangeText,
+              ]}
+            >
+              6 Months
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.timeRangeButton,
+              timeRange === "long_term" && styles.activeTimeRange,
+            ]}
+            onPress={() => setTimeRange("long_term")}
+          >
+            <Text
+              style={[
+                styles.timeRangeText,
+                timeRange === "long_term" && styles.activeTimeRangeText,
+              ]}
+            >
+              Last Wrapped
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Last Updated */}
+        {lastUpdated && (
+          <View style={styles.lastUpdatedContainer}>
+            <Text style={styles.lastUpdatedText}>
+              Last updated: {new Date(lastUpdated).toLocaleString()}
+            </Text>
+          </View>
+        )}
         {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
 
-        {listeningStats.topTrack && (
+        {/* Currently Playing */}
+        {listeningStats.currentlyPlaying &&
+          listeningStats.currentlyPlaying.item && (
+            <View style={styles.topItemCard}>
+              <Text style={styles.topItemTitle}>Currently Playing</Text>
+              <View style={styles.topItemContent}>
+                {listeningStats.currentlyPlaying.item.album?.images?.[0]
+                  ?.url && (
+                  <Image
+                    source={{
+                      uri: listeningStats.currentlyPlaying.item.album.images[0]
+                        .url,
+                    }}
+                    style={styles.topItemImage}
+                  />
+                )}
+                <View style={styles.topItemDetails}>
+                  <Text style={styles.topItemName}>
+                    {listeningStats.currentlyPlaying.item.name}
+                  </Text>
+                  <Text style={styles.topItemArtist}>
+                    {listeningStats.currentlyPlaying.item.artists
+                      ?.map((a) => a.name)
+                      .join(", ")}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+        {/* Top Track */}
+        {listeningStats.topTracks && listeningStats.topTracks.length > 0 && (
           <View style={styles.topItemCard}>
-            <Text style={styles.topItemTitle}>Your Top Track</Text>
+            <View style={styles.topItemHeaderContainer}>
+              <Text style={styles.topItemTitle}>Your Top Track</Text>
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("TopTracks", {
+                    tracks: listeningStats.topTracks,
+                    timeRange: timeRange,
+                  })
+                }
+                style={styles.viewMoreButton}
+              >
+                <Text style={styles.viewMoreText}>View More</Text>
+                <Ionicons name="chevron-forward" size={16} color="#9999E6" />
+              </TouchableOpacity>
+            </View>
             <View style={styles.topItemContent}>
-              {listeningStats.topTrack.album?.images?.[0]?.url && (
+              {listeningStats.topTracks[0].album?.images?.[0]?.url && (
                 <Image
-                  source={{ uri: listeningStats.topTrack.album.images[0].url }}
+                  source={{
+                    uri: listeningStats.topTracks[0].album.images[0].url,
+                  }}
                   style={styles.topItemImage}
                 />
               )}
               <View style={styles.topItemDetails}>
                 <Text style={styles.topItemName}>
-                  {listeningStats.topTrack.name}
+                  {listeningStats.topTracks[0].name}
                 </Text>
                 <Text style={styles.topItemArtist}>
-                  {listeningStats.topTrack.artists
+                  {listeningStats.topTracks[0].artists
                     ?.map((a) => a.name)
                     .join(", ")}
                 </Text>
@@ -154,22 +375,37 @@ export default function Stats({ navigation }) {
           </View>
         )}
 
-        {listeningStats.topArtist && (
+        {/* Top Artist */}
+        {listeningStats.topArtists && listeningStats.topArtists.length > 0 && (
           <View style={styles.topItemCard}>
-            <Text style={styles.topItemTitle}>Your Top Artist</Text>
+            <View style={styles.topItemHeaderContainer}>
+              <Text style={styles.topItemTitle}>Your Top Artist</Text>
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("TopArtists", {
+                    artists: listeningStats.topArtists,
+                    timeRange: timeRange,
+                  })
+                }
+                style={styles.viewMoreButton}
+              >
+                <Text style={styles.viewMoreText}>View More</Text>
+                <Ionicons name="chevron-forward" size={16} color="#9999E6" />
+              </TouchableOpacity>
+            </View>
             <View style={styles.topItemContent}>
-              {listeningStats.topArtist.images?.[0]?.url && (
+              {listeningStats.topArtists[0].images?.[0]?.url && (
                 <Image
-                  source={{ uri: listeningStats.topArtist.images[0].url }}
+                  source={{ uri: listeningStats.topArtists[0].images[0].url }}
                   style={styles.topItemImage}
                 />
               )}
               <View style={styles.topItemDetails}>
                 <Text style={styles.topItemName}>
-                  {listeningStats.topArtist.name}
+                  {listeningStats.topArtists[0].name}
                 </Text>
                 <Text style={styles.topItemArtist}>
-                  {listeningStats.topArtist.genres?.slice(0, 2).join(", ")}
+                  {listeningStats.topArtists[0].genres?.slice(0, 2).join(", ")}
                 </Text>
               </View>
             </View>
@@ -180,7 +416,7 @@ export default function Stats({ navigation }) {
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
             <Text>
-              <Ionicons name="time-outline" size={32} color="#1DB954" />
+              <Ionicons name="time-outline" size={32} color="#9999E6" />
             </Text>
           </View>
           <View style={styles.statContent}>
@@ -196,57 +432,30 @@ export default function Stats({ navigation }) {
           </View>
         </View>
 
-        {/* Artists Discovered */}
-        <View style={styles.statCard}>
-          <View style={styles.statIconContainer}>
-            <Text>
-              <Ionicons name="people-outline" size={32} color="#1DB954" />
-            </Text>
-          </View>
-          <View style={styles.statContent}>
-            <Text style={styles.statTitle}>Artists Discovered</Text>
-            <Text style={styles.statValue}>
-              {listeningStats.artistsListened}
-            </Text>
-            <Text style={styles.statSubtext}>
-              You've explored a diverse range of artists
-            </Text>
-          </View>
-        </View>
-
-        {/* Songs Played */}
-        <View style={styles.statCard}>
-          <View style={styles.statIconContainer}>
-            <Text>
-              <Ionicons
-                name="musical-notes-outline"
-                size={32}
-                color="#1DB954"
-              />
-            </Text>
-          </View>
-          <View style={styles.statContent}>
-            <Text style={styles.statTitle}>Songs Played</Text>
-            <Text style={styles.statValue}>{listeningStats.songsPlayed}</Text>
-            <Text style={styles.statSubtext}>That's a lot of great music!</Text>
-          </View>
-        </View>
+        {/* Note: Removed unique artists and tracks sections as they weren't working reliably */}
 
         {/* Top Genres */}
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
             <Text>
-              <Ionicons name="albums-outline" size={32} color="#1DB954" />
+              <Ionicons name="albums-outline" size={32} color="#9999E6" />
             </Text>
           </View>
           <View style={styles.statContent}>
             <Text style={styles.statTitle}>Top Genres</Text>
             <View style={styles.genreContainer}>
-              {listeningStats.topGenres.map((genre, index) => (
-                <View key={index} style={styles.genreTag}>
-                  <Text style={styles.genreText}>{genre}</Text>
+              {Array.isArray(listeningStats.topGenres) &&
+              listeningStats.topGenres.length > 0 ? (
+                listeningStats.topGenres.map((genre, index) => (
+                  <View key={index} style={styles.genreTag}>
+                    <Text style={styles.genreText}>{genre}</Text>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.genreTag}>
+                  <Text style={styles.genreText}>No genres available</Text>
                 </View>
-              ))}
+              )}
             </View>
           </View>
         </View>
@@ -255,7 +464,7 @@ export default function Stats({ navigation }) {
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
             <Text>
-              <Ionicons name="calendar-outline" size={32} color="#1DB954" />
+              <Ionicons name="calendar-outline" size={32} color="#9999E6" />
             </Text>
           </View>
           <View style={styles.statContent}>
@@ -273,13 +482,13 @@ export default function Stats({ navigation }) {
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
             <Text>
-              <Ionicons name="flame-outline" size={32} color="#1DB954" />
+              <Ionicons name="flame-outline" size={32} color="#9999E6" />
             </Text>
           </View>
           <View style={styles.statContent}>
-            <Text style={styles.statTitle}>Longest Listening Streak</Text>
+            <Text style={styles.statTitle}>Listening Streak</Text>
             <Text style={styles.statValue}>
-              {`${listeningStats.longestListeningStreak} days`}
+              {`${listeningStats.listeningStreak || 0} days`}
             </Text>
             <Text style={styles.statSubtext}>
               You're committed to your music!
@@ -292,6 +501,57 @@ export default function Stats({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // View More styles
+  topItemHeaderContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  viewMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  viewMoreText: {
+    color: "#9999E6",
+    fontSize: 14,
+    marginRight: 4,
+  },
+  timeRangeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: theme.background.secondary,
+    padding: 4,
+  },
+  timeRangeButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderRadius: 6,
+  },
+  activeTimeRange: {
+    backgroundColor: theme.button.primary,
+  },
+  timeRangeText: {
+    color: theme.text.secondary,
+    fontWeight: "500",
+    fontSize: 12,
+  },
+  activeTimeRangeText: {
+    color: "#FFF",
+    fontWeight: "bold",
+  },
+  lastUpdatedContainer: {
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  lastUpdatedText: {
+    color: theme.text.secondary,
+    fontSize: 12,
+    fontStyle: "italic",
+  },
   container: {
     flex: 1,
     backgroundColor: theme.background.primary,

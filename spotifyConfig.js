@@ -5,6 +5,7 @@
 export const spotifyConfig = {
   // Your Spotify application credentials
   clientId: "21d17026bbe0430697c7be4554663b36",
+  clientSecret: "2d2db4bb84ed42bc8d60d321f5e97ed2",
   
   // Authentication endpoints
   discovery: {

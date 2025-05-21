@@ -29,6 +29,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { disconnectSpotify } from "../../services/spotifyService";
+import { useSpotifyStats } from "../../contexts/SpotifyStatsContext";
 import * as ImagePicker from "expo-image-picker";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { theme } from "../../theme/theme";
@@ -51,6 +52,9 @@ export default function Profile({ navigation: propNavigation }) {
   const [userReviews, setUserReviews] = useState([]);
   const [username, setUsername] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
+  
+  // Get Spotify stats from our context
+  const { shortTerm, refreshStats } = useSpotifyStats();
 
   // Filter saved items by type
   const savedAlbums = savedItems.filter((item) => item.type === "album");
@@ -100,8 +104,14 @@ export default function Profile({ navigation: propNavigation }) {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([loadUserProfile(), loadUserReviews()]);
-    setRefreshing(false);
+    try {
+      // Refresh Spotify stats along with user profile and reviews
+      await Promise.all([loadUserProfile(), loadUserReviews(), refreshStats()]);
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const loadUserProfile = async () => {
@@ -590,6 +600,106 @@ export default function Profile({ navigation: propNavigation }) {
             <Text style={styles.emptyListText}>No favorite songs yet</Text>
           )}
         </View>
+        
+        {/* Recently Played Section (from Spotify) */}
+        {shortTerm && shortTerm.recentlyPlayed && shortTerm.recentlyPlayed.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recently Played</Text>
+              <TouchableOpacity
+                style={styles.statsButton}
+                onPress={() => navigation.navigate("Stats")}
+              >
+                <Text style={styles.viewMoreText}>View Stats</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={shortTerm.recentlyPlayed}
+              horizontal
+              keyExtractor={(item, index) => `recent-${item.id || index}`}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.imageWrapper}
+                  onPress={() => {
+                    navigation.navigate("Info", {
+                      id: item.track.id,
+                      title: item.track.name,
+                      artist: item.track.artists?.map(a => a.name).join(", "),
+                      imageUri: item.track.album?.images?.[0]?.url,
+                      type: "track",
+                      spotifyUri: item.track.uri,
+                    });
+                  }}
+                >
+                  <Image 
+                    source={item.track.album?.images?.[0]?.url ? 
+                      { uri: item.track.album.images[0].url } : 
+                      require("../../assets/babydoll.jpeg")} 
+                    style={styles.image} 
+                  />
+                  <Text style={styles.imageLabel} numberOfLines={1}>
+                    {item.track.name}
+                  </Text>
+                  <Text style={styles.artistLabel} numberOfLines={1}>
+                    {item.track.artists?.map(a => a.name).join(", ")}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16 }}
+            />
+          </View>
+        )}
+        
+        {/* Top Tracks Section (from Spotify) */}
+        {shortTerm && shortTerm.topTracks && shortTerm.topTracks.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Top Tracks</Text>
+              <TouchableOpacity
+                style={styles.statsButton}
+                onPress={() => navigation.navigate("Stats")}
+              >
+                <Text style={styles.viewMoreText}>View Stats</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={shortTerm.topTracks}
+              horizontal
+              keyExtractor={(item, index) => `top-track-${item.id || index}`}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.imageWrapper}
+                  onPress={() => {
+                    navigation.navigate("Info", {
+                      id: item.id,
+                      title: item.name,
+                      artist: item.artists?.map(a => a.name).join(", "),
+                      imageUri: item.album?.images?.[0]?.url,
+                      type: "track",
+                      spotifyUri: item.uri,
+                    });
+                  }}
+                >
+                  <Image 
+                    source={item.album?.images?.[0]?.url ? 
+                      { uri: item.album.images[0].url } : 
+                      require("../../assets/babydoll.jpeg")} 
+                    style={styles.image} 
+                  />
+                  <Text style={styles.imageLabel} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <Text style={styles.artistLabel} numberOfLines={1}>
+                    {item.artists?.map(a => a.name).join(", ")}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16 }}
+            />
+          </View>
+        )}
 
         {/* My List Section */}
         <View style={styles.section}>
@@ -720,6 +830,17 @@ export default function Profile({ navigation: propNavigation }) {
 }
 
 const styles = StyleSheet.create({
+  artistLabel: {
+    color: theme.text.secondary,
+    fontSize: 12,
+    marginTop: 2,
+    textAlign: "center",
+    width: imageSize,
+  },
+  statsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   container: {
     flex: 1,
     backgroundColor: theme.background.primary,

@@ -1,8 +1,10 @@
+import { LinearGradient } from "expo-linear-gradient";
+
 export const theme = {
   // background colors
   background: {
     primary: "#121212", // dark grey
-    secondary: "#1e1e1e",  // lighter dark grey
+    secondary: "#1e1e1e", // lighter dark grey
   },
 
   // text colors

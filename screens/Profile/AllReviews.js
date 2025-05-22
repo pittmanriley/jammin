@@ -15,18 +15,18 @@ export default function AllReviews({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color={theme.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>All My Reviews</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.topBarTitle}>All My Reviews</Text>
+        <View style={styles.backButton} />
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.reviewsList}>
         {reviews.length > 0 ? (
           reviews.map((review) => (
             <TouchableOpacity
@@ -62,43 +62,59 @@ export default function AllReviews({ route, navigation }) {
                 style={styles.reviewImage}
               />
               <View style={styles.reviewContent}>
-                <Text style={styles.reviewTitle}>{review.itemTitle}</Text>
-                <Text style={styles.reviewArtist}>{review.itemArtist}</Text>
-                <View style={styles.reviewRating}>
-                  {[1, 2, 3, 4, 5].map((star) => {
-                    const fullStar = star <= Math.floor(review.rating);
-                    const halfStar =
-                      !fullStar &&
-                      star === Math.floor(review.rating) + 1 &&
-                      review.rating % 1 !== 0;
-
-                    return (
-                      <Ionicons
-                        key={star}
-                        name={
-                          fullStar
-                            ? "star"
-                            : halfStar
-                            ? "star-half"
-                            : "star-outline"
-                        }
-                        size={16}
-                        color="#FFD700"
-                        style={{ marginRight: 2 }}
-                      />
-                    );
-                  })}
+                <Text style={styles.reviewTitle} numberOfLines={1}>
+                  {review.itemTitle}
+                </Text>
+                <Text style={styles.reviewArtist} numberOfLines={1}>
+                  {review.itemArtist}
+                </Text>
+                <View style={styles.ratingContainer}>
+                  {Array(5)
+                    .fill(0)
+                    .map((_, i) => {
+                      if (i < Math.floor(review.rating)) {
+                        return (
+                          <Ionicons
+                            key={i}
+                            name="star"
+                            size={14}
+                            color="#FFD700"
+                          />
+                        );
+                      } else if (
+                        i === Math.floor(review.rating) &&
+                        review.rating % 1 !== 0
+                      ) {
+                        return (
+                          <Ionicons
+                            key={i}
+                            name="star-half"
+                            size={14}
+                            color="#FFD700"
+                          />
+                        );
+                      } else {
+                        return (
+                          <Ionicons
+                            key={i}
+                            name="star-outline"
+                            size={14}
+                            color="#FFD700"
+                          />
+                        );
+                      }
+                    })}
                   <Text style={styles.ratingText}>
                     {review.rating.toFixed(1)}
                   </Text>
                 </View>
                 {review.review && (
-                  <Text style={styles.reviewText}>{review.review}</Text>
+                  <Text style={styles.reviewText} numberOfLines={2}>
+                    {review.review}
+                  </Text>
                 )}
-              </View>
-              <View style={styles.reviewTypeContainer}>
-                <Text style={styles.reviewType}>
-                  {review.itemType === "album" ? "Album" : "Song"}
+                <Text style={styles.reviewDate}>
+                  {review.createdAt?.toDate().toLocaleDateString()}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -116,86 +132,75 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.background.primary,
   },
-  header: {
+  topBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
-    backgroundColor: theme.background.secondary,
+    backgroundColor: theme.background.primary,
+    justifyContent: "space-between",
   },
   backButton: {
     padding: 8,
+    width: 40,
   },
-  headerTitle: {
-    fontSize: 20,
+  topBarTitle: {
+    fontSize: 18,
     fontWeight: "bold",
     color: theme.text.primary,
-    textAlign: "center",
-    flex: 1,
   },
-  content: {
+  reviewsList: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
   },
   reviewItem: {
     flexDirection: "row",
     backgroundColor: theme.background.secondary,
-    borderRadius: 12,
+    borderRadius: 8,
     padding: 12,
-    marginBottom: 16,
-    position: "relative",
+    marginBottom: 12,
   },
   reviewImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    marginRight: 12,
+    width: 60,
+    height: 60,
+    borderRadius: 4,
   },
   reviewContent: {
     flex: 1,
-    justifyContent: "center",
+    marginLeft: 12,
   },
   reviewTitle: {
     fontSize: 16,
     fontWeight: "bold",
     color: theme.text.primary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   reviewArtist: {
     fontSize: 14,
     color: theme.text.secondary,
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  reviewRating: {
+  ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 4,
   },
   ratingText: {
-    color: theme.text.secondary,
     fontSize: 14,
+    color: "#FFD700",
     marginLeft: 4,
+    fontWeight: "bold",
   },
   reviewText: {
     fontSize: 14,
-    color: theme.text.secondary,
-    fontStyle: "italic",
+    color: theme.text.primary,
+    lineHeight: 18,
+    marginBottom: 4,
   },
-  reviewTypeContainer: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    backgroundColor: `${theme.button.primary}33`, // 20% opacity
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  reviewType: {
+  reviewDate: {
     fontSize: 12,
-    color: theme.button.primary,
-    fontWeight: "600",
+    color: theme.text.secondary,
   },
   emptyText: {
     textAlign: "center",

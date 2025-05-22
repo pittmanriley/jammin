@@ -16,9 +16,16 @@
     },
     "production": {
       "autoIncrement": true
+    },
+    "appstore": {
+      "ios": {
+        "distribution": "store"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {}
+    }
   }
 }

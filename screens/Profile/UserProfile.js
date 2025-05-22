@@ -256,12 +256,16 @@ export default function UserProfile({ route }) {
         </View>
 
         {/* Favorite Albums */}
-        <View style={styles.section}>
+        <View style={[styles.section, { overflow: "visible" }]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Favorite Albums</Text>
           </View>
           {savedItems.filter((item) => item.type === "album").length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ overflow: "hidden" }}
+            >
               <View style={styles.savedItemsRow}>
                 {savedItems
                   .filter((item) => item.type === "album")
@@ -300,12 +304,16 @@ export default function UserProfile({ route }) {
         </View>
 
         {/* Favorite Songs */}
-        <View style={styles.section}>
+        <View style={[styles.section, { overflow: "visible" }]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Favorite Songs</Text>
           </View>
           {savedItems.filter((item) => item.type === "track").length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ overflow: "hidden" }}
+            >
               <View style={styles.savedItemsRow}>
                 {savedItems
                   .filter((item) => item.type === "track")
@@ -349,7 +357,30 @@ export default function UserProfile({ route }) {
           <View style={styles.reviewsContainer}>
             <Text style={styles.sectionTitle}>Recent Reviews</Text>
             {userReviews.slice(0, 3).map((review) => (
-              <View key={review.id} style={styles.reviewItem}>
+              <TouchableOpacity
+                key={review.id}
+                style={styles.reviewItem}
+                onPress={() => {
+                  if (review.itemType === "album") {
+                    navigation.navigate("AlbumScreen", {
+                      id: review.itemId,
+                      title: review.itemTitle,
+                      artist: review.itemArtist,
+                      imageUri: review.itemImageUri,
+                      spotifyUri: review.itemSpotifyUri,
+                    });
+                  } else {
+                    navigation.navigate("Info", {
+                      id: review.itemId,
+                      title: review.itemTitle,
+                      artist: review.itemArtist,
+                      imageUri: review.itemImageUri,
+                      type: review.itemType,
+                      spotifyUri: review.itemSpotifyUri,
+                    });
+                  }
+                }}
+              >
                 <Image
                   source={
                     review.itemImageUri
@@ -411,10 +442,18 @@ export default function UserProfile({ route }) {
                     </Text>
                   )}
                 </View>
-              </View>
+              </TouchableOpacity>
             ))}
             {userReviews.length > 3 && (
-              <TouchableOpacity style={styles.viewMoreButton}>
+              <TouchableOpacity
+                style={styles.viewMoreButton}
+                onPress={() =>
+                  navigation.navigate("UserReviews", {
+                    userId,
+                    reviews: userReviews,
+                  })
+                }
+              >
                 <Text style={styles.viewMoreText}>View all reviews</Text>
               </TouchableOpacity>
             )}

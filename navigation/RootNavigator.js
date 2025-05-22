@@ -24,6 +24,7 @@ import AllSongs from "../screens/Feed/AllSongs";
 import AllReviews from "../screens/Profile/AllReviews";
 import AllSavedItems from "../screens/Profile/AllSavedItems";
 import UserProfile from "../screens/Profile/UserProfile";
+import UserReviews from "../screens/Profile/UserReviews";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -152,6 +153,11 @@ export default function RootNavigator() {
         <Stack.Screen
           name="UserProfile"
           component={UserProfile}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="UserReviews"
+          component={UserReviews}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

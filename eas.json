@@ -20,7 +20,8 @@
     "appstore": {
       "ios": {
         "distribution": "store"
-      }
+      },
+      "autoIncrement": true
     }
   },
   "submit": {

@@ -2,7 +2,7 @@
   "expo": {
     "name": "jammin",
     "slug": "jammin",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -20,6 +20,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "buildNumber": "10",
       "infoPlist": {
         "CFBundleURLTypes": [
           {

@@ -575,7 +575,11 @@ export default function Profile({ navigation: propNavigation }) {
                     style={styles.removeFriendButton}
                     onPress={() => handleRemoveFriend(item.id)}
                   >
-                    <Ionicons name="trash" size={20} color="#ff6b6b" />
+                    <Ionicons
+                      name="trash-outline"
+                      size={20}
+                      color={theme.text.secondary}
+                    />
                   </TouchableOpacity>
                 </View>
               )}

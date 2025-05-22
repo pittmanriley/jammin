@@ -66,7 +66,7 @@ export default function Login() {
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <Image
-            source={require("../../assets/Adobe Express - file (1).png")}
+            source={require("../../assets/icon.png")}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -132,8 +132,8 @@ const styles = StyleSheet.create({
     marginBottom: 50,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 130,
+    height: 130,
     marginBottom: 10,
     marginTop: 20,
   },

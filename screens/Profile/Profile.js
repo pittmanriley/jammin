@@ -144,7 +144,11 @@ export default function Profile({ navigation: propNavigation }) {
           userData.displayName || currentUser.displayName || "User"
         );
         setBio(userData.bio || "No bio yet");
-        setProfilePicUrl(userData.profilePicUrl || null);
+        setProfilePicUrl(
+          userData.profilePicUrl ||
+            currentUser.photoURL ||
+            require("../../assets/profile.jpg")
+        );
         setUsername(userData.username || "");
 
         // Get saved items
@@ -556,6 +560,7 @@ export default function Profile({ navigation: propNavigation }) {
                       }
                       defaultSource={require("../../assets/profile.jpg")}
                       style={styles.friendProfilePic}
+                      onError={() => {}}
                     />
                     <View style={{ marginLeft: 12, flex: 1 }}>
                       <Text style={styles.friendDisplayName}>
@@ -662,13 +667,10 @@ export default function Profile({ navigation: propNavigation }) {
               <>
                 <Image
                   source={
-                    profilePicUrl &&
-                    typeof profilePicUrl === "string" &&
-                    profilePicUrl.startsWith("http")
+                    profilePicUrl
                       ? { uri: profilePicUrl }
                       : require("../../assets/profile.jpg")
                   }
-                  defaultSource={require("../../assets/profile.jpg")}
                   style={styles.profilePic}
                 />
                 {editMode && (

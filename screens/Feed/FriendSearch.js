@@ -32,9 +32,11 @@ export default function FriendSearch() {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [friends, setFriends] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
 
   useEffect(() => {
     loadFriends();
+    loadAllUsers();
   }, []);
 
   const loadFriends = async () => {
@@ -54,28 +56,45 @@ export default function FriendSearch() {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-
+  const loadAllUsers = async () => {
     try {
       setLoading(true);
       const usersRef = collection(db, "users");
       const querySnapshot = await getDocs(usersRef);
 
-      // Filter results in memory for case-insensitive search
-      const results = [];
+      const users = [];
       querySnapshot.forEach((doc) => {
         if (doc.id === auth.currentUser.uid) return; // Skip current user
+        users.push({ id: doc.id, ...doc.data() });
+      });
 
-        const data = doc.data();
-        const displayName = (data.displayName || "").toLowerCase();
-        const username = (data.username || "").toLowerCase();
-        const searchTerm = searchQuery.toLowerCase();
+      setAllUsers(users);
+      setSearchResults(users); // Show all users by default
+    } catch (error) {
+      console.error("Error loading users:", error);
+      Alert.alert("Error", "Failed to load users. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        // Check if either displayName or username contains the search term
-        if (displayName.includes(searchTerm) || username.includes(searchTerm)) {
-          results.push({ id: doc.id, ...data });
-        }
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults(allUsers); // Show all users if search is empty
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const searchTerm = searchQuery.toLowerCase();
+
+      // Filter results in memory from allUsers
+      const results = allUsers.filter((user) => {
+        const displayName = (user.displayName || "").toLowerCase();
+        const username = (user.username || "").toLowerCase();
+        return (
+          displayName.includes(searchTerm) || username.includes(searchTerm)
+        );
       });
 
       setSearchResults(results);
@@ -136,7 +155,9 @@ export default function FriendSearch() {
       <View style={styles.resultItem}>
         <TouchableOpacity
           style={styles.resultContent}
-          onPress={() => navigation.navigate("UserProfile", { userId: item.id })}
+          onPress={() =>
+            navigation.navigate("UserProfile", { userId: item.id })
+          }
         >
           <Image
             source={
@@ -197,7 +218,12 @@ export default function FriendSearch() {
             placeholder="Search by username..."
             placeholderTextColor={theme.text.secondary}
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (!text.trim()) {
+                setSearchResults(allUsers); // Show all users when search is cleared
+              }
+            }}
             onSubmitEditing={handleSearch}
             returnKeyType="search"
             autoCapitalize="none"
@@ -206,7 +232,10 @@ export default function FriendSearch() {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity
-              onPress={() => setSearchQuery("")}
+              onPress={() => {
+                setSearchQuery("");
+                setSearchResults(allUsers); // Show all users when search is cleared
+              }}
               style={styles.clearButton}
             >
               <Ionicons
@@ -222,7 +251,7 @@ export default function FriendSearch() {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.button.primary} />
-          <Text style={styles.loadingText}>Searching...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       ) : (
         <FlatList
@@ -237,9 +266,7 @@ export default function FriendSearch() {
                   No users found. Try a different search.
                 </Text>
               ) : (
-                <Text style={styles.emptyText}>
-                  Search for users by their username {'\n'}to follow them.
-                </Text>
+                <Text style={styles.emptyText}>Loading users...</Text>
               )}
             </View>
           }

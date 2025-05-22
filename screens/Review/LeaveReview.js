@@ -20,16 +20,22 @@ import {
   isSpotifyConnected,
 } from "../../services/spotifyService";
 import { auth, db } from "../../firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import { theme } from "../../theme/theme";
 
 export default function LeaveReview({ route, navigation }) {
-  const { song } = route.params || {};
+  const { song, existingReview } = route.params || {};
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedSong, setSelectedSong] = useState(song || null);
-  const [rating, setRating] = useState(0);
-  const [reviewText, setReviewText] = useState("");
+  const [rating, setRating] = useState(existingReview?.rating || 0);
+  const [reviewText, setReviewText] = useState(existingReview?.review || "");
   const [loading, setLoading] = useState(false);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
   const [searchType, setSearchType] = useState("track,album,artist");
@@ -194,10 +200,18 @@ export default function LeaveReview({ route, navigation }) {
         itemSpotifyUri: selectedSong.spotifyUri,
         rating,
         review: reviewText,
-        createdAt: serverTimestamp(),
+        createdAt: existingReview?.createdAt || serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
-      await addDoc(collection(db, "reviews"), reviewData);
+      if (existingReview) {
+        // Update existing review
+        const reviewRef = doc(db, "reviews", existingReview.id);
+        await updateDoc(reviewRef, reviewData);
+      } else {
+        // Create new review
+        await addDoc(collection(db, "reviews"), reviewData);
+      }
 
       Alert.alert(
         "Review Posted!",
@@ -406,120 +420,122 @@ export default function LeaveReview({ route, navigation }) {
           <View style={{ width: 50 }} />
         </View>
 
-      {!spotifyConnected ? (
-        <View style={styles.spotifyConnectContainer}>
-          <Text style={styles.spotifyConnectTitle}>Connect to Spotify</Text>
-          <Text style={styles.spotifyConnectText}>
-            Connect your Spotify account to search for songs
-          </Text>
-          <TouchableOpacity
-            style={styles.connectButton}
-            onPress={handleConnectSpotify}
-          >
-            <Text style={styles.connectButtonText}>Connect Spotify</Text>
-          </TouchableOpacity>
-        </View>
-      ) : directReviewMode ? (
-        renderReviewForm()
-      ) : (
-        <>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search for music..."
-              placeholderTextColor={theme.text.secondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={handleSearch}
-            />
+        {!spotifyConnected ? (
+          <View style={styles.spotifyConnectContainer}>
+            <Text style={styles.spotifyConnectTitle}>Connect to Spotify</Text>
+            <Text style={styles.spotifyConnectText}>
+              Connect your Spotify account to search for songs
+            </Text>
             <TouchableOpacity
-              style={styles.searchButton}
-              onPress={handleSearch}
+              style={styles.connectButton}
+              onPress={handleConnectSpotify}
             >
-              <Ionicons name="search" size={24} color={theme.text.primary} />
+              <Text style={styles.connectButtonText}>Connect Spotify</Text>
             </TouchableOpacity>
           </View>
-
-          <View style={styles.filterContainer}>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                activeFilter === "all" && styles.activeFilterButton,
-              ]}
-              onPress={() => handleFilterChange("all")}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  activeFilter === "all" && styles.activeFilterText,
-                ]}
+        ) : directReviewMode ? (
+          renderReviewForm()
+        ) : (
+          <>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search for music..."
+                placeholderTextColor={theme.text.secondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+              />
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={handleSearch}
               >
-                All
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                activeFilter === "songs" && styles.activeFilterButton,
-              ]}
-              onPress={() => handleFilterChange("songs")}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  activeFilter === "songs" && styles.activeFilterText,
-                ]}
-              >
-                Songs
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                activeFilter === "albums" && styles.activeFilterButton,
-              ]}
-              onPress={() => handleFilterChange("albums")}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  activeFilter === "albums" && styles.activeFilterText,
-                ]}
-              >
-                Albums
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                activeFilter === "artists" && styles.activeFilterButton,
-              ]}
-              onPress={() => handleFilterChange("artists")}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  activeFilter === "artists" && styles.activeFilterText,
-                ]}
-              >
-                Artists
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {selectedSong && (
-            <View style={styles.selectedSongContainer}>
-              <Text style={styles.selectedSongTitle}>{selectedSong.name}</Text>
-              <Text style={styles.selectedSongArtist}>
-                {selectedSong.artist}
-              </Text>
+                <Ionicons name="search" size={24} color={theme.text.primary} />
+              </TouchableOpacity>
             </View>
-          )}
 
-          {renderSearchResults()}
-          {renderReviewForm()}
-        </>
-      )}
+            <View style={styles.filterContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  activeFilter === "all" && styles.activeFilterButton,
+                ]}
+                onPress={() => handleFilterChange("all")}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    activeFilter === "all" && styles.activeFilterText,
+                  ]}
+                >
+                  All
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  activeFilter === "songs" && styles.activeFilterButton,
+                ]}
+                onPress={() => handleFilterChange("songs")}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    activeFilter === "songs" && styles.activeFilterText,
+                  ]}
+                >
+                  Songs
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  activeFilter === "albums" && styles.activeFilterButton,
+                ]}
+                onPress={() => handleFilterChange("albums")}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    activeFilter === "albums" && styles.activeFilterText,
+                  ]}
+                >
+                  Albums
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  activeFilter === "artists" && styles.activeFilterButton,
+                ]}
+                onPress={() => handleFilterChange("artists")}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    activeFilter === "artists" && styles.activeFilterText,
+                  ]}
+                >
+                  Artists
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {selectedSong && (
+              <View style={styles.selectedSongContainer}>
+                <Text style={styles.selectedSongTitle}>
+                  {selectedSong.name}
+                </Text>
+                <Text style={styles.selectedSongArtist}>
+                  {selectedSong.artist}
+                </Text>
+              </View>
+            )}
+
+            {renderSearchResults()}
+            {renderReviewForm()}
+          </>
+        )}
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );

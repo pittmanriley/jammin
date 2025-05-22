@@ -585,6 +585,7 @@ export default function InfoScreen({ route, navigation }) {
                   spotifyUri: spotifyUri,
                   type: type,
                 },
+                existingReview: userReview,
               })
             }
           >
@@ -792,7 +793,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 8,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.5,
@@ -801,7 +802,7 @@ const styles = StyleSheet.create({
     color: theme.text.primary,
     marginLeft: 8,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   savedButtonText: {
     color: theme.button.primary,

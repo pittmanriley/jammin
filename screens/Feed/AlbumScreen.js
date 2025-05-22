@@ -235,6 +235,7 @@ export default function AlbumScreen({ route, navigation }) {
                     spotifyUri: spotifyUri,
                     type: "album",
                   },
+                  existingReview: userReview,
                 })
               }
             >

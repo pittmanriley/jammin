@@ -245,6 +245,13 @@ export default function Feed({ navigation }) {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Ionicons
+          name="search"
+          size={28}
+          color={theme.text.primary}
+          style={styles.searchIcon}
+          onPress={() => navigation.navigate("Search")}
+        />
+        <Ionicons
           name="people"
           size={28}
           color={theme.text.primary}
@@ -553,6 +560,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: theme.text.primary,
     textAlign: "center",
+  },
+  searchIcon: {
+    position: "absolute",
+    left: 20,
+    top: 10,
   },
   friendsIcon: {
     position: "absolute",

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,15 +7,52 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
+  Alert,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { theme } from "../../theme/theme";
+import { auth, db } from "../../firebaseConfig";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 
 const windowWidth = Dimensions.get("window").width;
 
 export default function AllSavedItems({ route, navigation }) {
   const { items } = route.params;
-  const savedItems = items;
+  const [savedItems, setSavedItems] = useState(items);
+
+  const handleRemoveItem = async (itemToRemove) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert("Error", "You need to be logged in to remove items");
+        return;
+      }
+
+      const userRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.savedItems && Array.isArray(userData.savedItems)) {
+          // Remove the item from the array
+          const updatedSavedItems = userData.savedItems.filter(
+            (item) => item.id !== itemToRemove.id
+          );
+
+          // Update Firestore
+          await updateDoc(userRef, {
+            savedItems: updatedSavedItems,
+          });
+
+          // Update local state
+          setSavedItems(updatedSavedItems);
+        }
+      }
+    } catch (error) {
+      console.error("Error removing item:", error);
+      Alert.alert("Error", "Failed to remove item. Please try again.");
+    }
+  };
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -62,9 +99,12 @@ export default function AllSavedItems({ route, navigation }) {
           </Text>
         </View>
       </View>
-      <View style={styles.itemActions}>
+      <TouchableOpacity
+        style={styles.itemActions}
+        onPress={() => handleRemoveItem(item)}
+      >
         <Ionicons name="heart" size={24} color={theme.button.primary} />
-      </View>
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 

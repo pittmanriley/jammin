@@ -193,7 +193,7 @@ export default function Search() {
           onPress={() => handleSaveItem(item)}
         >
           <Ionicons
-            name={isSaved ? "bookmark" : "bookmark-outline"}
+            name={isSaved ? "heart" : "heart-outline"}
             size={24}
             color={isSaved ? theme.button.primary : theme.text.primary}
           />

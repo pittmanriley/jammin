@@ -24,6 +24,7 @@ import {
   getDoc,
   setDoc,
   or,
+  deleteDoc,
 } from "firebase/firestore";
 import { getTrackDetails, getArtist } from "../../services/spotifyService";
 import { useRoute } from "@react-navigation/native";
@@ -228,8 +229,9 @@ export default function InfoScreen({ route, navigation }) {
 
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
-        const reviewData = querySnapshot.docs[0].data();
-        setUserReview(reviewData);
+        const reviewDoc = querySnapshot.docs[0];
+        const reviewData = reviewDoc.data();
+        setUserReview({ id: reviewDoc.id, ...reviewData });
       }
     } catch (error) {
       console.error("Error fetching user review:", error);
@@ -290,6 +292,51 @@ export default function InfoScreen({ route, navigation }) {
       setFriendReviews(allReviews);
     } catch (error) {
       console.error("Error fetching friend reviews:", error);
+    }
+  };
+
+  const handleDeleteReview = async () => {
+    try {
+      if (!userReview || !userReview.id) {
+        console.error("No review ID found");
+        return;
+      }
+
+      Alert.alert(
+        "Delete Review",
+        "Are you sure you want to delete this review?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                console.log("Deleting review with ID:", userReview.id);
+                const reviewRef = doc(db, "reviews", userReview.id);
+                await deleteDoc(reviewRef);
+                console.log("Review deleted successfully");
+                setUserReview(null);
+                // Refresh all reviews after deletion
+                await fetchAllReviews();
+                await fetchFriendReviews();
+              } catch (error) {
+                console.error("Error in delete operation:", error);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete review. Please try again."
+                );
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+      Alert.alert("Error", "Failed to delete review. Please try again.");
     }
   };
 
@@ -403,7 +450,19 @@ export default function InfoScreen({ route, navigation }) {
         ) : (
           userReview && (
             <View style={styles.userReviewContainer}>
-              <Text style={styles.userReviewTitle}>My Review</Text>
+              <View style={styles.userReviewHeader}>
+                <Text style={styles.userReviewTitle}>My Review</Text>
+                <TouchableOpacity
+                  onPress={handleDeleteReview}
+                  style={styles.deleteButton}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={20}
+                    color={theme.text.secondary}
+                  />
+                </TouchableOpacity>
+              </View>
               <View style={styles.userReviewContent}>
                 <View style={styles.starsContainer}>
                   {renderStars(userReview.rating)}
@@ -698,12 +757,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
   },
+  userReviewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: theme.background.primary,
+    padding: 10,
+  },
   userReviewTitle: {
     color: theme.text.primary,
     fontSize: 16,
     fontWeight: "bold",
-    backgroundColor: theme.background.primary,
-    padding: 10,
   },
   userReviewContent: {
     padding: 15,
@@ -823,5 +887,8 @@ const styles = StyleSheet.create({
     color: theme.text.primary,
     marginTop: 32,
     marginBottom: 10,
+  },
+  deleteButton: {
+    padding: 5,
   },
 });

@@ -129,7 +129,9 @@ export default function NewPost({ navigation }) {
           </Text>
           <TouchableOpacity
             style={styles.connectButton}
-            onPress={() => navigation.navigate("SpotifyAuth")}
+            onPress={() =>
+              navigation.navigate("SpotifyAuth", { fromMain: true })
+            }
           >
             <Text style={styles.connectButtonText}>Connect Spotify</Text>
           </TouchableOpacity>

@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
+import { auth } from "../firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 import SpotifyAuth from "../screens/Auth/SpotifyAuth";
 import Feed from "../screens/Feed/Feed";
 import Profile from "../screens/Profile/Profile";
@@ -60,107 +62,143 @@ function TabNavigator() {
   );
 }
 
-// Wrap the tabs inside a Stack Navigator
+// Authentication Stack
+function AuthStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Login"
+        component={Login}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Signup"
+        component={Signup}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="SpotifyAuth"
+        component={SpotifyAuth}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// Main App Stack
+function MainStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="MainTabs"
+        component={TabNavigator}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="LeaveReview"
+        component={LeaveReview}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Info"
+        component={InfoScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="SpotifyAuth"
+        component={SpotifyAuth}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Stats"
+        component={Stats}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TopTracks"
+        component={TopTracks}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TopArtists"
+        component={TopArtists}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Search"
+        component={Search}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="FriendSearch"
+        component={FriendSearch}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AlbumScreen"
+        component={AlbumScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Artist"
+        component={ArtistScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AllAlbums"
+        component={AllAlbums}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AllSongs"
+        component={AllSongs}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AllReviews"
+        component={AllReviews}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AllSavedItems"
+        component={AllSavedItems}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="UserProfile"
+        component={UserProfile}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="UserReviews"
+        component={UserReviews}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// Root Navigator
 export default function RootNavigator() {
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState(null);
+
+  // Handle user state changes
+  function onAuthStateChangedHandler(user) {
+    setUser(user);
+    if (initializing) setInitializing(false);
+  }
+
+  useEffect(() => {
+    const subscriber = onAuthStateChanged(auth, onAuthStateChangedHandler);
+    return subscriber; // unsubscribe on unmount
+  }, []);
+
+  if (initializing) return null;
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen
-          name="Login"
-          component={Login}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Signup"
-          component={Signup}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="MainTabs"
-          component={TabNavigator}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="LeaveReview"
-          component={LeaveReview}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Info"
-          component={InfoScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="SpotifyAuth"
-          component={SpotifyAuth}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Stats"
-          component={Stats}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="TopTracks"
-          component={TopTracks}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="TopArtists"
-          component={TopArtists}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Search"
-          component={Search}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="FriendSearch"
-          component={FriendSearch}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AlbumScreen"
-          component={AlbumScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Artist"
-          component={ArtistScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AllAlbums"
-          component={AllAlbums}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AllSongs"
-          component={AllSongs}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AllReviews"
-          component={AllReviews}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="AllSavedItems"
-          component={AllSavedItems}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="UserProfile"
-          component={UserProfile}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="UserReviews"
-          component={UserReviews}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
+      {user ? <MainStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }

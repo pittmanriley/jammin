@@ -112,7 +112,10 @@ export default function Signup() {
       });
 
       Alert.alert("Success", "Account created successfully!");
-      navigation.navigate("SpotifyAuth");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "SpotifyAuth" }],
+      });
     } catch (error) {
       let errorMessage;
 

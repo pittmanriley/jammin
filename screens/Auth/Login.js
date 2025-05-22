@@ -34,7 +34,10 @@ export default function Login() {
       await signInWithEmailAndPassword(auth, email, password);
 
       // Navigate to SpotifyAuth after successful login
-      navigation.navigate("SpotifyAuth");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "SpotifyAuth" }],
+      });
     } catch (error) {
       let errorMessage;
       console.log(error);

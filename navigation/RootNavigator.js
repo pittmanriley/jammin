@@ -27,6 +27,7 @@ import AllReviews from "../screens/Profile/AllReviews";
 import AllSavedItems from "../screens/Profile/AllSavedItems";
 import UserProfile from "../screens/Profile/UserProfile";
 import UserReviews from "../screens/Profile/UserReviews";
+import ReviewDetailScreen from "../screens/Review/ReviewDetailScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -102,6 +103,11 @@ function MainStack() {
       <Stack.Screen
         name="Info"
         component={InfoScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ReviewDetail"
+        component={ReviewDetailScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen

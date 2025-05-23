@@ -20,22 +20,29 @@ import {
   where,
   getDocs,
   serverTimestamp,
+  doc,
+  getDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { theme } from "../../theme/theme";
 
 export default function AlbumScreen({ route, navigation }) {
-  const { id, title, artist, imageUri, spotifyUri } = route.params;
+  const { id, title, artist, imageUri, spotifyUri, clickedReview } =
+    route.params;
 
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userReview, setUserReview] = useState(null);
   const [albumGenres, setAlbumGenres] = useState([]);
   const [releaseDate, setReleaseDate] = useState(null);
+  const [allReviews, setAllReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
 
   useEffect(() => {
     fetchAlbumDetails();
     fetchAlbumTracks();
     fetchUserReview();
+    fetchAllReviews();
   }, []);
 
   const fetchAlbumDetails = async () => {
@@ -99,11 +106,74 @@ export default function AlbumScreen({ route, navigation }) {
 
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
-        const reviewData = querySnapshot.docs[0].data();
-        setUserReview(reviewData);
+        const reviewDoc = querySnapshot.docs[0];
+        const reviewData = reviewDoc.data();
+        setUserReview({
+          id: reviewDoc.id, // Make sure we're setting the document ID
+          ...reviewData,
+        });
       }
     } catch (error) {
       console.error("Error fetching user review:", error);
+    }
+  };
+
+  const fetchAllReviews = async () => {
+    try {
+      setLoadingReviews(true);
+      const reviewsRef = collection(db, "reviews");
+      const q = query(
+        reviewsRef,
+        where("itemId", "==", id),
+        where("itemType", "==", "album")
+      );
+
+      const querySnapshot = await getDocs(q);
+      const reviews = [];
+
+      // Get all user data for the reviews
+      const userIds = new Set();
+      querySnapshot.forEach((doc) => {
+        const reviewData = doc.data();
+        reviews.push({
+          id: doc.id,
+          ...reviewData,
+        });
+        userIds.add(reviewData.userId);
+      });
+
+      // Fetch usernames for all reviewers
+      const userData = {};
+      for (const uid of userIds) {
+        const userRef = doc(db, "users", uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          userData[uid] = {
+            username: userDoc.data().username || "",
+            displayName: userDoc.data().displayName || "",
+          };
+        }
+      }
+
+      // Add username info to each review
+      const reviewsWithUsernames = reviews.map((review) => ({
+        ...review,
+        username: userData[review.userId]?.username || "",
+        displayName: userData[review.userId]?.displayName || "",
+      }));
+
+      // Sort by most recent first
+      reviewsWithUsernames.sort((a, b) => {
+        const dateA = a.createdAt?.seconds || 0;
+        const dateB = b.createdAt?.seconds || 0;
+        return dateB - dateA;
+      });
+
+      setAllReviews(reviewsWithUsernames);
+    } catch (error) {
+      console.error("Error fetching all reviews:", error);
+    } finally {
+      setLoadingReviews(false);
     }
   };
 
@@ -175,6 +245,50 @@ export default function AlbumScreen({ route, navigation }) {
     </TouchableOpacity>
   );
 
+  const handleDeleteReview = async () => {
+    try {
+      if (!userReview || !userReview.id) {
+        console.error("No review ID found");
+        return;
+      }
+
+      Alert.alert(
+        "Delete Review",
+        "Are you sure you want to delete this review?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                console.log("Deleting review with ID:", userReview.id);
+                const reviewRef = doc(db, "reviews", userReview.id);
+                await deleteDoc(reviewRef);
+                console.log("Review deleted successfully");
+                setUserReview(null);
+                // Refresh all reviews after deletion
+                await fetchAllReviews();
+              } catch (error) {
+                console.error("Error in delete operation:", error);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete review. Please try again."
+                );
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+      Alert.alert("Error", "Failed to delete review. Please try again.");
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Header with back button */}
@@ -223,29 +337,19 @@ export default function AlbumScreen({ route, navigation }) {
         {/* User's Review (if exists) */}
         {userReview && (
           <View style={styles.userReviewContainer}>
-            <TouchableOpacity
-              style={styles.editReviewIcon}
-              onPress={() =>
-                navigation.navigate("LeaveReview", {
-                  song: {
-                    id: id,
-                    name: title,
-                    artist: artist,
-                    imageUri: imageUri,
-                    spotifyUri: spotifyUri,
-                    type: "album",
-                  },
-                  existingReview: userReview,
-                })
-              }
-            >
-              <Ionicons
-                name="create-outline"
-                size={22}
-                color={theme.text.primary}
-              />
-            </TouchableOpacity>
-            <Text style={styles.userReviewTitle}>My Review</Text>
+            <View style={styles.userReviewHeader}>
+              <Text style={styles.userReviewTitle}>My Review</Text>
+              <TouchableOpacity
+                onPress={handleDeleteReview}
+                style={styles.deleteButton}
+              >
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color={theme.text.secondary}
+                />
+              </TouchableOpacity>
+            </View>
             <View style={styles.userReviewContent}>
               <View style={styles.starsContainer}>
                 {renderStars(userReview.rating)}
@@ -262,6 +366,105 @@ export default function AlbumScreen({ route, navigation }) {
             </View>
           </View>
         )}
+
+        {/* Review Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.reviewButton}
+            onPress={() =>
+              navigation.navigate("LeaveReview", {
+                song: {
+                  id: id,
+                  name: title,
+                  artist: artist,
+                  imageUri: imageUri,
+                  spotifyUri: spotifyUri,
+                  type: "album",
+                },
+                existingReview: userReview,
+              })
+            }
+          >
+            <Ionicons
+              name="create-outline"
+              size={22}
+              color={theme.text.primary}
+            />
+            <Text style={styles.buttonText}>
+              {userReview ? "Edit Review" : "Leave Review"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* All Reviews Section */}
+        <View style={styles.reviewsContainer}>
+          <Text style={styles.reviewsTitle}>All Reviews</Text>
+          {loadingReviews ? (
+            <ActivityIndicator
+              size="large"
+              color={theme.button.primary}
+              style={styles.loader}
+            />
+          ) : allReviews.length > 0 ? (
+            <FlatList
+              data={allReviews}
+              keyExtractor={(review) => review.id || Math.random().toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 8 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.reviewBlockHorizontal}
+                  onPress={() =>
+                    navigation.navigate("ReviewDetail", { review: item })
+                  }
+                >
+                  <Text style={styles.reviewUser}>
+                    @{item.username || "User"}
+                  </Text>
+                  <View style={styles.starsContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const fullStar = star <= Math.floor(item.rating);
+                      const halfStar =
+                        !fullStar &&
+                        star === Math.floor(item.rating) + 1 &&
+                        item.rating % 1 !== 0;
+                      return (
+                        <Ionicons
+                          key={star}
+                          name={
+                            fullStar
+                              ? "star"
+                              : halfStar
+                              ? "star-half"
+                              : "star-outline"
+                          }
+                          size={16}
+                          color="#FFD700"
+                          style={{ marginRight: 2 }}
+                        />
+                      );
+                    })}
+                    <Text style={styles.ratingText}>
+                      {item.rating ? item.rating.toFixed(1) : ""}
+                    </Text>
+                  </View>
+                  <Text
+                    style={styles.reviewText}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    "{item.review}"
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          ) : (
+            <View style={styles.noReviewsContainer}>
+              <Text style={styles.emptyText}>No reviews yet</Text>
+            </View>
+          )}
+        </View>
 
         {/* Tracks List */}
         <View style={styles.tracksContainer}>
@@ -373,12 +576,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.background.secondary,
   },
-  editReviewIcon: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    zIndex: 2,
-    padding: 6,
+  userReviewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: theme.background.primary,
+    padding: 10,
+  },
+  deleteButton: {
+    padding: 5,
   },
   userReviewTitle: {
     fontSize: 18,
@@ -411,6 +617,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 12,
     textAlign: "right",
+  },
+  reviewsContainer: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.background.secondary,
+  },
+  reviewsTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: theme.text.primary,
+    marginBottom: 16,
+  },
+  reviewBlockHorizontal: {
+    width: 220,
+    marginRight: 16,
+    padding: 12,
+    backgroundColor: theme.background.secondary,
+    borderRadius: 8,
+  },
+  reviewUser: {
+    color: theme.text.primary,
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  reviewText: {
+    color: theme.text.secondary,
+    fontSize: 14,
+    fontStyle: "italic",
+    marginBottom: 4,
+  },
+  noReviewsContainer: {
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
   },
   tracksContainer: {
     padding: 16,
@@ -459,5 +700,30 @@ const styles = StyleSheet.create({
     color: theme.text.secondary,
     textAlign: "center",
     marginTop: 20,
+  },
+  buttonContainer: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.background.secondary,
+  },
+  reviewButton: {
+    backgroundColor: theme.background.secondary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+  },
+  buttonText: {
+    color: theme.text.primary,
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

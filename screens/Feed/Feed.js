@@ -123,7 +123,7 @@ export default function Feed({ navigation }) {
         setFriendReviews([]);
         return;
       }
-      
+
       // First, fetch all friend user data to get their usernames
       const friendData = {};
       for (const fid of friendIds) {
@@ -132,11 +132,11 @@ export default function Feed({ navigation }) {
         if (friendDoc.exists()) {
           friendData[fid] = {
             username: friendDoc.data().username || "",
-            displayName: friendDoc.data().displayName || ""
+            displayName: friendDoc.data().displayName || "",
           };
         }
       }
-      
+
       // Fetch reviews for all friends
       let allReviews = [];
       for (const fid of friendIds) {
@@ -145,15 +145,15 @@ export default function Feed({ navigation }) {
         const querySnapshot = await getDocs(q);
         querySnapshot.forEach((doc) => {
           // Add username info to each review
-          allReviews.push({ 
-            id: doc.id, 
+          allReviews.push({
+            id: doc.id,
             ...doc.data(),
             username: friendData[fid]?.username || "",
-            displayName: friendData[fid]?.displayName || "" 
+            displayName: friendData[fid]?.displayName || "",
           });
         });
       }
-      
+
       // Sort by most recent first
       allReviews.sort((a, b) => {
         const dateA = a.createdAt?.seconds || 0;
@@ -506,7 +506,9 @@ export default function Feed({ navigation }) {
                         </Text>
                       </View>
                       {item.username && (
-                        <Text style={styles.usernameText}>@{item.username}</Text>
+                        <Text style={styles.usernameText}>
+                          @{item.username}
+                        </Text>
                       )}
                     </View>
                   </View>

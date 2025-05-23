@@ -492,7 +492,12 @@ export default function InfoScreen({ route, navigation }) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingVertical: 8 }}
             renderItem={({ item }) => (
-              <View style={styles.reviewBlockHorizontal}>
+              <TouchableOpacity
+                style={styles.reviewBlockHorizontal}
+                onPress={() =>
+                  navigation.navigate("ReviewDetail", { review: item })
+                }
+              >
                 <Text style={styles.reviewUser}>
                   @{item.username || "Friend"}
                 </Text>
@@ -530,7 +535,7 @@ export default function InfoScreen({ route, navigation }) {
                 >
                   "{item.review}"
                 </Text>
-              </View>
+              </TouchableOpacity>
             )}
           />
         ) : (
@@ -549,7 +554,12 @@ export default function InfoScreen({ route, navigation }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingVertical: 8 }}
           renderItem={({ item }) => (
-            <View style={styles.reviewBlockHorizontal}>
+            <TouchableOpacity
+              style={styles.reviewBlockHorizontal}
+              onPress={() =>
+                navigation.navigate("ReviewDetail", { review: item })
+              }
+            >
               <Text style={styles.reviewUser}>
                 @{item.username || "Friend"}
               </Text>
@@ -587,7 +597,7 @@ export default function InfoScreen({ route, navigation }) {
               >
                 {item.review ? `"${item.review}"` : ""}
               </Text>
-            </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <Text style={styles.emptyText}>No friend reviews yet</Text>

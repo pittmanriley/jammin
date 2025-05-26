@@ -21,10 +21,12 @@
     "ios": {
       "supportsTablet": true,
       "buildNumber": "10",
+      "bundleIdentifier": "com.jammin.app",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["jammin"]
+            "CFBundleURLSchemes": ["jammin"],
+            "CFBundleURLName": "com.jammin.app"
           }
         ]
       },

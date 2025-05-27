@@ -393,6 +393,10 @@ export default function LeaveReview({ route, navigation }) {
           placeholderTextColor={theme.text.secondary}
           multiline
           numberOfLines={6}
+          returnKeyType="done"
+          onSubmitEditing={() => {
+            Keyboard.dismiss();
+          }}
           value={reviewText}
           onChangeText={setReviewText}
         />

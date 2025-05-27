@@ -258,9 +258,41 @@ export default function InfoScreen({ route, navigation }) {
       );
       const querySnapshot = await getDocs(q);
       const reviewsList = [];
+
+      // Get all unique user IDs from the reviews
+      const userIds = new Set();
       querySnapshot.forEach((doc) => {
-        reviewsList.push({ id: doc.id, ...doc.data() });
+        const reviewData = doc.data();
+        userIds.add(reviewData.userId);
       });
+
+      // Fetch all user documents at once
+      const userDocs = await Promise.all(
+        Array.from(userIds).map((uid) => getDoc(doc(db, "users", uid)))
+      );
+
+      // Create a map of user IDs to usernames
+      const userMap = new Map();
+      userDocs.forEach((userDoc) => {
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          userMap.set(
+            userDoc.id,
+            userData.username || userData.displayName || "User"
+          );
+        }
+      });
+
+      // Add reviews with usernames
+      querySnapshot.forEach((doc) => {
+        const reviewData = doc.data();
+        reviewsList.push({
+          id: doc.id,
+          ...reviewData,
+          username: userMap.get(reviewData.userId) || "User",
+        });
+      });
+
       setAllReviews(reviewsList);
     } catch (error) {
       console.error("Error fetching all reviews:", error);

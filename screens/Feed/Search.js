@@ -16,6 +16,7 @@ import { searchSpotify } from "../../services/spotifyService";
 import { auth, db } from "../../firebaseConfig";
 import { doc, updateDoc, getDoc, arrayUnion } from "firebase/firestore";
 import { theme } from "../../theme/theme";
+import { trackEvent } from "../../amplitude";
 
 export default function Search() {
   const navigation = useNavigation();
@@ -51,6 +52,11 @@ export default function Search() {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
+
+    trackEvent("user_search_feed", {
+      query: searchQuery.trim(),
+      searchType,
+    });
 
     try {
       setLoading(true);

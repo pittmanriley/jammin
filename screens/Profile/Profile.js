@@ -39,6 +39,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { theme } from "../../theme/theme";
+import { trackEvent } from "../../amplitude"; // adjust path if needed
 
 const windowWidth = Dimensions.get("window").width;
 const imageSize = 120; // Adjust size for albums/songs
@@ -318,10 +319,10 @@ export default function Profile({ navigation: propNavigation }) {
       console.log("Successfully signed out from Firebase");
 
       // Navigate to Login screen instead of SpotifyAuth
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Login" }],
-      });
+      // navigation.reset({
+      //   index: 0,
+      //   routes: [{ name: "Login" }],
+      // });
     } catch (error) {
       console.error("Error signing out:", error);
       Alert.alert("Error", "Failed to sign out. Please try again.");
@@ -601,7 +602,10 @@ export default function Profile({ navigation: propNavigation }) {
       <View style={styles.topBarFixed}>
         <TouchableOpacity
           style={styles.statsButton}
-          onPress={() => navigation.navigate("Stats")}
+          onPress={() => {
+            trackEvent("view_stats");
+            navigation.navigate("Stats");
+          }}
         >
           <Ionicons
             name="stats-chart-outline"

@@ -18,6 +18,7 @@ import {
   isSpotifyConnected,
 } from "../../services/spotifyService";
 import { theme } from "../../theme/theme";
+import { trackEvent } from "../../amplitude";
 
 export default function NewPost({ navigation }) {
   const [query, setQuery] = useState("");
@@ -50,6 +51,11 @@ export default function NewPost({ navigation }) {
       setSearchResults([]);
       return;
     }
+
+    trackEvent("user_search_new_post", {
+      query: query.trim(),
+      filters: selectedFilters,
+    });
 
     try {
       setLoading(true);

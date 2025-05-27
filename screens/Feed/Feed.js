@@ -30,6 +30,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { theme } from "../../theme/theme";
+import { trackEvent } from "../../amplitude";
 
 const windowWidth = Dimensions.get("window").width;
 const imageSize = 120; // Adjust as needed
@@ -203,6 +204,11 @@ export default function Feed({ navigation }) {
             onPress={() => {
               // Navigate to AlbumScreen for albums, Info for tracks
               if (item.type === "album") {
+                trackEvent("view_album", {
+                  album_id: item.id,
+                  title: item.title,
+                  artist: item.artist,
+                });
                 navigation.navigate("AlbumScreen", {
                   id: item.id,
                   title: item.title,
@@ -212,6 +218,11 @@ export default function Feed({ navigation }) {
                   spotifyUri: item.spotifyUri,
                 });
               } else {
+                trackEvent("view_song", {
+                  track_id: item.id,
+                  title: item.title,
+                  artist: item.artist,
+                });
                 navigation.navigate("Info", {
                   id: item.id,
                   title: item.title,

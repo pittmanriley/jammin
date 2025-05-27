@@ -5,9 +5,15 @@ import * as spotifyService from "./services/spotifyService";
 import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import { SpotifyStatsProvider } from "./contexts/SpotifyStatsContext";
+import { initAmplitude, trackEvent } from "./amplitude";
 
 export default function App() {
   const [listeningStats, setListeningStats] = useState(null);
+
+  useEffect(() => {
+    initAmplitude();
+    trackEvent("app_open");
+  }, []);
 
   // Refresh Spotify listening stats on app startup and when app returns to foreground
   useEffect(() => {

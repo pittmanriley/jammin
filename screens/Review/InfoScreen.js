@@ -29,6 +29,7 @@ import {
 import { getTrackDetails, getArtist } from "../../services/spotifyService";
 import { useRoute } from "@react-navigation/native";
 import { theme } from "../../theme/theme";
+import { trackEvent } from "../../amplitude";
 
 export default function InfoScreen({ route, navigation }) {
   const { id, title, artist, imageUri, type, spotifyUri, albumId, albumTitle } =
@@ -73,6 +74,13 @@ export default function InfoScreen({ route, navigation }) {
   };
 
   const handleSaveItem = async () => {
+    trackEvent("save_song", {
+      item_id: id,
+      item_type: type,
+      item_title: title,
+      item_artist: artist,
+    });
+
     try {
       setSavingItem(true);
       const user = auth.currentUser;

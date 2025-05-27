@@ -27,6 +27,9 @@
   "submit": {
     "production": {
       "ios": {}
+    },
+    "appstore": {
+      "ios": {}
     }
   }
 }

@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		2FEA59C22DE62AED00B59DB6 /* playstore.png in Resources */ = {isa = PBXBuildFile; fileRef = 2FEA59C02DE62AED00B59DB6 /* playstore.png */; };
+		2FEA59C32DE62AED00B59DB6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2FEA59BF2DE62AED00B59DB6 /* Assets.xcassets */; };
+		2FEA59C42DE62AED00B59DB6 /* appstore.png in Resources */ = {isa = PBXBuildFile; fileRef = 2FEA59BE2DE62AED00B59DB6 /* appstore.png */; };
 		3209432FEF189477CC7E1D65 /* libPods-jammin.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 54363F00AF1E45584A65390F /* libPods-jammin.a */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		AAA9BA9C9DC82E9DCE9D2D89 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E6BDFFFCF8635D153FE9FB /* ExpoModulesProvider.swift */; };
@@ -21,7 +24,10 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = jammin/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = jammin/Info.plist; sourceTree = "<group>"; };
 		1C4910C036BA6B4C057CC5EB /* Pods-jammin.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-jammin.debug.xcconfig"; path = "Target Support Files/Pods-jammin/Pods-jammin.debug.xcconfig"; sourceTree = "<group>"; };
-		2C45925CAD6E7ECCCB9799DA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = jammin/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		2C45925CAD6E7ECCCB9799DA /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = jammin/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		2FEA59BE2DE62AED00B59DB6 /* appstore.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = appstore.png; sourceTree = "<group>"; };
+		2FEA59BF2DE62AED00B59DB6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2FEA59C02DE62AED00B59DB6 /* playstore.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = playstore.png; sourceTree = "<group>"; };
 		54363F00AF1E45584A65390F /* libPods-jammin.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-jammin.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		70E6BDFFFCF8635D153FE9FB /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-jammin/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		94A26F96F35C589FF457AC0D /* Pods-jammin.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-jammin.release.xcconfig"; path = "Target Support Files/Pods-jammin/Pods-jammin.release.xcconfig"; sourceTree = "<group>"; };
@@ -51,6 +57,7 @@
 				F11748442D0722820044C1D9 /* jammin-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
+				2FEA59C12DE62AED00B59DB6 /* AppIcons */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				2C45925CAD6E7ECCCB9799DA /* PrivacyInfo.xcprivacy */,
@@ -67,13 +74,22 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		2FEA59C12DE62AED00B59DB6 /* AppIcons */ = {
+			isa = PBXGroup;
+			children = (
+				2FEA59BE2DE62AED00B59DB6 /* appstore.png */,
+				2FEA59BF2DE62AED00B59DB6 /* Assets.xcassets */,
+				2FEA59C02DE62AED00B59DB6 /* playstore.png */,
+			);
+			path = AppIcons;
+			sourceTree = "<group>";
+		};
 		6008FCDAF676D216526971C4 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
 				1C4910C036BA6B4C057CC5EB /* Pods-jammin.debug.xcconfig */,
 				94A26F96F35C589FF457AC0D /* Pods-jammin.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -197,6 +213,9 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				DC45F17F1190E17C31F8265E /* PrivacyInfo.xcprivacy in Resources */,
+				2FEA59C22DE62AED00B59DB6 /* playstore.png in Resources */,
+				2FEA59C32DE62AED00B59DB6 /* Assets.xcassets in Resources */,
+				2FEA59C42DE62AED00B59DB6 /* appstore.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

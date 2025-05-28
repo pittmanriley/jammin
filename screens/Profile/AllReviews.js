@@ -108,7 +108,7 @@ export default function AllReviews({ route, navigation }) {
                     {review.rating.toFixed(1)}
                   </Text>
                 </View>
-                {review.review && (
+                {review.review && review.review.trim() !== '' && (
                   <Text style={styles.reviewText} numberOfLines={2}>
                     {review.review}
                   </Text>

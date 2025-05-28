@@ -28,6 +28,7 @@ import AllSavedItems from "../screens/Profile/AllSavedItems";
 import UserProfile from "../screens/Profile/UserProfile";
 import UserReviews from "../screens/Profile/UserReviews";
 import ReviewDetailScreen from "../screens/Review/ReviewDetailScreen";
+import AllActivityScreen from "../screens/Feed/AllActivityScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -178,6 +179,11 @@ function MainStack() {
       <Stack.Screen
         name="UserReviews"
         component={UserReviews}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AllActivity"
+        component={AllActivityScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

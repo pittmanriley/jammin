@@ -110,7 +110,7 @@ export default function UserReviews({ route }) {
                   {review.rating.toFixed(1)}
                 </Text>
               </View>
-              {review.reviewText && (
+              {review.reviewText && review.reviewText.trim() !== '' && (
                 <Text style={styles.reviewText} numberOfLines={2}>
                   {review.reviewText}
                 </Text>

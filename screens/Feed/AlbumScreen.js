@@ -396,16 +396,19 @@ export default function AlbumScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* All Reviews Section */}
-        <View style={styles.reviewsContainer}>
-          <Text style={styles.reviewsTitle}>All Reviews</Text>
-          {loadingReviews ? (
+        {/* All Reviews Section - Only shown when there are reviews */}
+        {loadingReviews ? (
+          <View style={styles.reviewsContainer}>
+            <Text style={styles.reviewsTitle}>All Reviews</Text>
             <ActivityIndicator
               size="large"
               color={theme.button.primary}
               style={styles.loader}
             />
-          ) : allReviews.length > 0 ? (
+          </View>
+        ) : allReviews.length > 0 && (
+          <View style={styles.reviewsContainer}>
+            <Text style={styles.reviewsTitle}>All Reviews</Text>
             <FlatList
               data={allReviews}
               keyExtractor={(review) => review.id || Math.random().toString()}
@@ -449,22 +452,20 @@ export default function AlbumScreen({ route, navigation }) {
                       {item.rating ? item.rating.toFixed(1) : ""}
                     </Text>
                   </View>
-                  <Text
-                    style={styles.reviewText}
-                    numberOfLines={2}
-                    ellipsizeMode="tail"
-                  >
-                    "{item.review}"
-                  </Text>
+                  {item.review && item.review.trim() !== '' && (
+                    <Text
+                      style={styles.reviewText}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                    >
+                      "{item.review}"
+                    </Text>
+                  )}
                 </TouchableOpacity>
               )}
             />
-          ) : (
-            <View style={styles.noReviewsContainer}>
-              <Text style={styles.emptyText}>No reviews yet</Text>
-            </View>
-          )}
-        </View>
+          </View>
+        )}
 
         {/* Tracks List */}
         <View style={styles.tracksContainer}>

@@ -145,12 +145,12 @@ export default function Stats({ navigation }) {
       if (!connected) {
         // Use mock data if not connected to Spotify
         setListeningStats({
-          minutesListened: 12467,
-          artistsListened: 143,
-          songsPlayed: 1892,
-          topGenres: ["Pop", "Hip-Hop", "Indie", "R&B", "Rock"],
-          averageDailyMinutes: 78,
-          listeningStreak: 42,
+          minutesListened: 0,
+          artistsListened: 0,
+          songsPlayed: 0,
+          topGenres: [],
+          averageDailyMinutes: 0,
+          listeningStreak: 0,
           topTracks: [],
           topArtists: [],
         });

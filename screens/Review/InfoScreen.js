@@ -325,8 +325,39 @@ export default function InfoScreen({ route, navigation }) {
           where("itemType", "==", type)
         );
         const querySnapshot = await getDocs(q);
+        
+        // Get all unique user IDs from the reviews
+        const userIds = new Set();
         querySnapshot.forEach((doc) => {
-          allReviews.push({ id: doc.id, ...doc.data() });
+          const reviewData = doc.data();
+          userIds.add(reviewData.userId);
+        });
+        
+        // Fetch all user documents at once
+        const userDocs = await Promise.all(
+          Array.from(userIds).map((uid) => getDoc(doc(db, "users", uid)))
+        );
+        
+        // Create a map of user IDs to usernames
+        const userMap = new Map();
+        userDocs.forEach((userDoc) => {
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            userMap.set(
+              userDoc.id,
+              userData.username || userData.displayName || "User"
+            );
+          }
+        });
+        
+        // Add reviews with usernames
+        querySnapshot.forEach((doc) => {
+          const reviewData = doc.data();
+          allReviews.push({
+            id: doc.id,
+            ...reviewData,
+            username: userMap.get(reviewData.userId) || "User",
+          });
         });
       }
       setFriendReviews(allReviews);
@@ -510,7 +541,9 @@ export default function InfoScreen({ route, navigation }) {
                     {userReview.rating.toFixed(1)}
                   </Text>
                 </View>
-                <Text style={styles.userReviewText}>{userReview.review}</Text>
+                {userReview.review && userReview.review.trim() !== '' && (
+                  <Text style={styles.userReviewText}>{userReview.review}</Text>
+                )}
                 <Text style={styles.userReviewDate}>
                   {new Date(
                     userReview.createdAt.seconds * 1000
@@ -521,128 +554,131 @@ export default function InfoScreen({ route, navigation }) {
           )
         )}
 
-        {/* All Reviews Section */}
-        <Text style={styles.sectionTitle}>All Reviews:</Text>
-        <View style={styles.divider} />
-        {allReviews.length > 0 ? (
-          <FlatList
-            data={allReviews}
-            keyExtractor={(review) => review.id || Math.random().toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: 8 }}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.reviewBlockHorizontal}
-                onPress={() =>
-                  navigation.navigate("ReviewDetail", { review: item })
-                }
-              >
-                <Text style={styles.reviewUser}>
-                  @{item.username || "Friend"}
-                </Text>
-                <View style={styles.starsContainer}>
-                  {[1, 2, 3, 4, 5].map((star) => {
-                    const fullStar = star <= Math.floor(item.rating);
-                    const halfStar =
-                      !fullStar &&
-                      star === Math.floor(item.rating) + 1 &&
-                      item.rating % 1 !== 0;
-                    return (
-                      <Ionicons
-                        key={star}
-                        name={
-                          fullStar
-                            ? "star"
-                            : halfStar
-                            ? "star-half"
-                            : "star-outline"
-                        }
-                        size={16}
-                        color="#FFD700"
-                        style={{ marginRight: 2 }}
-                      />
-                    );
-                  })}
-                  <Text style={styles.ratingText}>
-                    {item.rating ? item.rating.toFixed(1) : ""}
-                  </Text>
-                </View>
-                <Text
-                  style={styles.reviewText}
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
+        {/* Friend Reviews Section - Only shown when there are reviews */}
+        {friendReviews.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Follower Reviews:</Text>
+            <View style={styles.divider} />
+            <FlatList
+              data={friendReviews}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 8 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.reviewBlockHorizontal}
+                  onPress={() =>
+                    navigation.navigate("ReviewDetail", { review: item })
+                  }
                 >
-                  "{item.review}"
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        ) : (
-          <View style={styles.noReviewsContainer}>
-            <Text style={styles.emptyText}>No reviews yet</Text>
-          </View>
+                  <Text style={styles.reviewUser}>
+                    @{item.username}
+                  </Text>
+                  <View style={styles.starsContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const fullStar = star <= Math.floor(item.rating);
+                      const halfStar =
+                        !fullStar &&
+                        star === Math.floor(item.rating) + 1 &&
+                        item.rating % 1 !== 0;
+                      return (
+                        <Ionicons
+                          key={star}
+                          name={
+                            fullStar
+                              ? "star"
+                              : halfStar
+                              ? "star-half"
+                              : "star-outline"
+                          }
+                          size={16}
+                          color="#FFD700"
+                          style={{ marginRight: 2 }}
+                        />
+                      );
+                    })}
+                    <Text style={styles.ratingText}>
+                      {item.rating ? item.rating.toFixed(1) : ""}
+                    </Text>
+                  </View>
+                  {item.review && item.review.trim() !== '' && (
+                    <Text
+                      style={styles.reviewText}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                    >
+                      "{item.review}"
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </>
         )}
 
-        {/* Friend Reviews Section (use same style as All Reviews) */}
-        <Text style={styles.sectionTitleWithMargin}>Follower Reviews:</Text>
-        <View style={styles.divider} />
-        <FlatList
-          data={friendReviews}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingVertical: 8 }}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.reviewBlockHorizontal}
-              onPress={() =>
-                navigation.navigate("ReviewDetail", { review: item })
-              }
-            >
-              <Text style={styles.reviewUser}>
-                @{item.username || "Friend"}
-              </Text>
-              <View style={styles.starsContainer}>
-                {[1, 2, 3, 4, 5].map((star) => {
-                  const fullStar = star <= Math.floor(item.rating);
-                  const halfStar =
-                    !fullStar &&
-                    star === Math.floor(item.rating) + 1 &&
-                    item.rating % 1 !== 0;
-                  return (
-                    <Ionicons
-                      key={star}
-                      name={
-                        fullStar
-                          ? "star"
-                          : halfStar
-                          ? "star-half"
-                          : "star-outline"
-                      }
-                      size={16}
-                      color="#FFD700"
-                      style={{ marginRight: 2 }}
-                    />
-                  );
-                })}
-                <Text style={styles.ratingText}>
-                  {item.rating ? item.rating.toFixed(1) : ""}
-                </Text>
-              </View>
-              <Text
-                style={styles.reviewText}
-                numberOfLines={2}
-                ellipsizeMode="tail"
-              >
-                {item.review ? `"${item.review}"` : ""}
-              </Text>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No friend reviews yet</Text>
-          }
-        />
+        {/* All Reviews Section - Only shown when there are reviews */}
+        {allReviews.length > 0 && (
+          <>
+            <Text style={styles.sectionTitleWithMargin}>All Reviews:</Text>
+            <View style={styles.divider} />
+            <FlatList
+              data={allReviews}
+              keyExtractor={(review) => review.id || Math.random().toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 8 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.reviewBlockHorizontal}
+                  onPress={() =>
+                    navigation.navigate("ReviewDetail", { review: item })
+                  }
+                >
+                  <Text style={styles.reviewUser}>
+                    @{item.username}
+                  </Text>
+                  <View style={styles.starsContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const fullStar = star <= Math.floor(item.rating);
+                      const halfStar =
+                        !fullStar &&
+                        star === Math.floor(item.rating) + 1 &&
+                        item.rating % 1 !== 0;
+                      return (
+                        <Ionicons
+                          key={star}
+                          name={
+                            fullStar
+                              ? "star"
+                              : halfStar
+                              ? "star-half"
+                              : "star-outline"
+                          }
+                          size={16}
+                          color="#FFD700"
+                          style={{ marginRight: 2 }}
+                        />
+                      );
+                    })}
+                    <Text style={styles.ratingText}>
+                      {item.rating ? item.rating.toFixed(1) : ""}
+                    </Text>
+                  </View>
+                  {item.review && item.review.trim() !== '' && (
+                    <Text
+                      style={styles.reviewText}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                    >
+                      "{item.review}"
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </>
+        )}
 
         {/* Overall Rating */}
         <Text style={styles.sectionTitleWithMargin}>Overall Rating:</Text>

@@ -11,11 +11,16 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
+  Dimensions,
+  ScrollView,
+  RefreshControl,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import {
   searchSpotify,
   isSpotifyConnected,
+  getPersonalizedRecommendations,
 } from "../../services/spotifyService";
 import { theme } from "../../theme/theme";
 import { trackEvent } from "../../amplitude";
@@ -25,21 +30,66 @@ export default function NewPost({ navigation }) {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [spotifyConnected, setSpotifyConnected] = useState(false);
-  // Remove searchType as we're not using it anymore
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     songs: false,
     albums: false,
   });
 
-  // Add a state to track all fetched results
+  // Add state for recommendations
+  const [recommendations, setRecommendations] = useState({
+    items: [],
+    recentTracks: [],
+    topTracks: [],
+    newReleases: [],
+  });
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+
+  // State to track all fetched search results
   const [allResults, setAllResults] = useState({
     tracks: [],
     albums: [],
   });
+  
+  // Calculate dimensions for the grid
+  const screenWidth = Dimensions.get('window').width;
+  const spacing = 15;
+  const numColumns = 2;
+  const contentPadding = 20;
+  // Calculate item width to ensure proper centering
+  const itemWidth = (screenWidth - (spacing * (numColumns + 1)) - (contentPadding * 2)) / numColumns;
 
   useEffect(() => {
     checkSpotifyConnection();
-  }, []);
+    if (spotifyConnected) {
+      fetchRecommendations();
+    }
+  }, [spotifyConnected]);
+  
+  // Function to fetch personalized recommendations
+  const fetchRecommendations = async () => {
+    try {
+      setLoadingRecommendations(true);
+      // Get more recommendations for a better discovery experience
+      const data = await getPersonalizedRecommendations(30);
+      setRecommendations(data);
+      trackEvent("viewed_recommendations", { 
+        recentTracks: data.recentTracks.length,
+        topTracks: data.topTracks.length,
+        newReleases: data.newReleases.length
+      });
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+  
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchRecommendations();
+    setRefreshing(false);
+  };
 
   const checkSpotifyConnection = async () => {
     const connected = await isSpotifyConnected();
@@ -124,6 +174,122 @@ export default function NewPost({ navigation }) {
     setSearchResults(formattedResults);
   };
 
+  // Render a grid item for the vertical grid
+  const renderGridItem = ({ item, index }) => {
+    return (
+      <TouchableOpacity
+        key={`item-${item.id}-${index}`}
+        style={[styles.gridItem, { width: itemWidth }]}
+        onPress={() => {
+          // Handle navigation based on item type
+          if (item.type === "album") {
+            navigation.navigate("Album", {
+              id: item.id,
+              title: item.name,
+              artist: item.artist,
+              imageUri: item.imageUri,
+              spotifyUri: item.spotifyUri,
+            });
+          } else {
+            navigation.navigate("Info", {
+              id: item.id,
+              title: item.name,
+              artist: item.artist,
+              imageUri: item.imageUri,
+              type: "track", // Ensure correct type is passed
+              spotifyUri: item.spotifyUri,
+            });
+          }
+          trackEvent("selected_recommendation", { type: item.type, fromGrid: true });
+        }}
+      >
+        <View style={styles.gridItemImageContainer}>
+          <Image
+            source={item.imageUri ? { uri: item.imageUri } : require("../../assets/profile.jpg")}
+            style={styles.gridItemImage}
+          />
+          <View style={styles.gridItemTypeTag}>
+            <Text style={styles.gridItemTypeText}>
+              {item.type === "track" ? "SONG" : "ALBUM"}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.gridItemTextContainer}>
+          <Text style={styles.gridItemName} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.gridItemArtist} numberOfLines={1}>{item.artist}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Render the explore grid
+  const renderExploreGrid = () => {
+    if (loadingRecommendations) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.button.primary} />
+          <Text style={styles.loadingText}>Loading recommendations...</Text>
+        </View>
+      );
+    }
+
+    // Combine all recommendations into a single array
+    let allItems = [];
+    
+    // Add albums from top artists
+    if (recommendations.topArtistAlbums && recommendations.topArtistAlbums.length > 0) {
+      allItems = [...allItems, ...recommendations.topArtistAlbums];
+    }
+    
+    // Add albums from listening history
+    if (recommendations.relatedAlbums && recommendations.relatedAlbums.length > 0) {
+      allItems = [...allItems, ...recommendations.relatedAlbums];
+    }
+    
+    // Add recommended tracks
+    if (recommendations.recommendedTracks && recommendations.recommendedTracks.length > 0) {
+      allItems = [...allItems, ...recommendations.recommendedTracks];
+    }
+    
+    // Add top tracks
+    if (recommendations.topTracks && recommendations.topTracks.length > 0) {
+      allItems = [...allItems, ...recommendations.topTracks];
+    }
+    
+    // Shuffle the items to create a mixed grid of albums and songs
+    const shuffledItems = [...allItems].sort(() => 0.5 - Math.random());
+    
+    if (shuffledItems.length === 0) {
+      return (
+        <View style={styles.noResultsContainer}>
+          <Ionicons name="musical-notes" size={50} color={theme.text.secondary} />
+          <Text style={styles.noResultsText}>No recommendations available</Text>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        key={`grid-${numColumns}`}
+        data={shuffledItems}
+        renderItem={renderGridItem}
+        keyExtractor={(item, index) => `item-${item.id}-${index}`}
+        numColumns={numColumns}
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={styles.gridContentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.button.primary]}
+            tintColor={theme.button.primary}
+          />
+        }
+      />
+    );
+  };
+
+  // Render the search results
   const renderSearchResults = () => {
     if (!spotifyConnected) {
       return (
@@ -219,94 +385,114 @@ export default function NewPost({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>New Review</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Text style={styles.header}>New Review</Text>
 
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Search for songs or albums"
-          placeholderTextColor={theme.text.secondary}
-          value={query}
-          onChangeText={setQuery}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-        />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Ionicons name="search" size={24} color={theme.text.primary} />
-        </TouchableOpacity>
+        {/* Search Box */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Search for a song or album to review..."
+            placeholderTextColor={theme.text.secondary}
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={handleSearch}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <Ionicons name="search" size={24} color={theme.text.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {query ? (
+          // Show search results and filters when there's a query
+          <>
+            {/* Filter Buttons */}
+            <View style={styles.filterContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  selectedFilters.songs && styles.filterButtonActive,
+                ]}
+                onPress={() => {
+                  const newSongsFilter = !selectedFilters.songs;
+                  const newFilters = {
+                    songs: newSongsFilter,
+                    albums: false,
+                  };
+                  setSelectedFilters(newFilters);
+
+                  setTimeout(() => {
+                    if (newFilters.songs) {
+                      setSearchResults([...allResults.tracks]);
+                    } else {
+                      setSearchResults([...allResults.tracks, ...allResults.albums]);
+                    }
+                  }, 10);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    selectedFilters.songs && styles.filterButtonTextActive,
+                  ]}
+                >
+                  Songs
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  selectedFilters.albums && styles.filterButtonActive,
+                ]}
+                onPress={() => {
+                  const newAlbumsFilter = !selectedFilters.albums;
+                  const newFilters = {
+                    songs: false,
+                    albums: newAlbumsFilter,
+                  };
+                  setSelectedFilters(newFilters);
+
+                  setTimeout(() => {
+                    if (newFilters.albums) {
+                      setSearchResults([...allResults.albums]);
+                    } else {
+                      setSearchResults([...allResults.tracks, ...allResults.albums]);
+                    }
+                  }, 10);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    selectedFilters.albums && styles.filterButtonTextActive,
+                  ]}
+                >
+                  Albums
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.resultsContainer}>{renderSearchResults()}</View>
+          </>
+        ) : (
+          // Show the recommendations grid when no search query
+          <>
+            <View style={styles.exploreHeaderContainer}>
+              <Text style={styles.exploreHeader}>Discover & Review</Text>
+              <Text style={styles.exploreSubheader}>Personalized recommendations based on your listening history</Text>
+            </View>
+
+            <View style={styles.gridContainer}>
+              {renderExploreGrid()}
+            </View>
+          </>
+        )}
       </View>
-
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            selectedFilters.songs && styles.filterButtonActive,
-          ]}
-          onPress={() => {
-            const newSongsFilter = !selectedFilters.songs;
-            const newFilters = {
-              songs: newSongsFilter,
-              albums: false,
-            };
-            setSelectedFilters(newFilters);
-
-            setTimeout(() => {
-              if (newFilters.songs) {
-                setSearchResults([...allResults.tracks]);
-              } else {
-                setSearchResults([...allResults.tracks, ...allResults.albums]);
-              }
-            }, 10);
-          }}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              selectedFilters.songs && styles.filterButtonTextActive,
-            ]}
-          >
-            Songs
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            selectedFilters.albums && styles.filterButtonActive,
-          ]}
-          onPress={() => {
-            const newAlbumsFilter = !selectedFilters.albums;
-            const newFilters = {
-              songs: false,
-              albums: newAlbumsFilter,
-            };
-            setSelectedFilters(newFilters);
-
-            setTimeout(() => {
-              if (newFilters.albums) {
-                setSearchResults([...allResults.albums]);
-              } else {
-                setSearchResults([...allResults.tracks, ...allResults.albums]);
-              }
-            }, 10);
-          }}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              selectedFilters.albums && styles.filterButtonTextActive,
-            ]}
-          >
-            Albums
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.resultsContainer}>{renderSearchResults()}</View>
-    </View>
+    </TouchableWithoutFeedback>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -462,5 +648,78 @@ const styles = StyleSheet.create({
     color: theme.text.primary,
     fontWeight: "bold",
     fontSize: 16,
+  },
+  // New styles for grid layout
+  gridContainer: {
+    flex: 1,
+  },
+  gridContentContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+    width: '100%',
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  gridItem: {
+    marginBottom: 15,
+    borderRadius: 8,
+  },
+  gridItemImageContainer: {
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 8,
+    aspectRatio: 1,
+    width: '100%',
+    backgroundColor: theme.background.secondary,
+  },
+  gridItemImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  gridItemTypeTag: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+  },
+  gridItemTypeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  gridItemTextContainer: {
+    marginTop: 6,
+    paddingHorizontal: 2,
+  },
+  gridItemName: {
+    color: theme.text.primary,
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  gridItemArtist: {
+    color: theme.text.secondary,
+    fontSize: 11,
+    marginTop: 1,
+  },
+  exploreHeaderContainer: {
+    marginBottom: 12,
+    marginTop: 5,
+  },
+  exploreHeader: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: theme.text.primary,
+  },
+  exploreSubheader: {
+    fontSize: 14,
+    color: theme.text.secondary,
+    marginTop: 2,
   },
 });

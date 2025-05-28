@@ -967,3 +967,148 @@ export const refreshListeningStats = async () => {
     throw error;
   }
 };
+
+/**
+ * Get personalized recommendations for the user's explore page
+ * Combines recently played, top tracks, and recommendations
+ * @param {number} limit - Maximum number of items to return in each category
+ * @returns {Object} Object with recentTracks, topTracks, and recommendations
+ */
+export const getPersonalizedRecommendations = async (limit = 8) => {
+  try {
+    const connected = await isSpotifyConnected();
+    if (!connected) {
+      return {
+        recentTracks: [],
+        topTracks: [],
+        recommendedTracks: [],
+        topArtistAlbums: [],
+        relatedAlbums: [],
+        newReleases: [],
+      };
+    }
+
+    // Get the user's recent tracks
+    const recentHistoryData = await getDetailedRecentHistory(limit);
+    const recentTracks = recentHistoryData.items?.map(item => ({
+      id: item.track.id,
+      name: item.track.name,
+      artist: item.track.artists.map(a => a.name).join(', '),
+      album: item.track.album.name,
+      albumId: item.track.album.id,
+      imageUri: item.track.album.images[0]?.url,
+      spotifyUri: item.track.uri,
+      type: 'track',
+      played_at: item.played_at,
+    })) || [];
+
+    // Get the user's top tracks
+    const topTracksData = await getUserTopTracks('short_term', limit);
+    const topTracks = topTracksData.items?.map(track => ({
+      id: track.id,
+      name: track.name,
+      artist: track.artists.map(a => a.name).join(', '),
+      artistIds: track.artists.map(a => a.id),
+      album: track.album.name,
+      albumId: track.album.id,
+      imageUri: track.album.images[0]?.url,
+      spotifyUri: track.uri,
+      type: 'track',
+    })) || [];
+
+    // Extract track IDs for recommendations seeds
+    const seedTracks = [...topTracks, ...recentTracks]
+      .filter((track, index, self) => 
+        index === self.findIndex(t => t.id === track.id)
+      )
+      .map(track => track.id)
+      .slice(0, 5);
+
+    // Get recommendations based on top and recent tracks
+    const recommendationsData = await getRecommendations(seedTracks, limit);
+    const recommendedTracks = recommendationsData.tracks?.map(track => ({
+      id: track.id,
+      name: track.name,
+      artist: track.artists.map(a => a.name).join(', '),
+      album: track.album.name,
+      albumId: track.album.id,
+      imageUri: track.album.images[0]?.url,
+      spotifyUri: track.uri,
+      type: 'track',
+    })) || [];
+
+    // Extract albums from the user's top tracks and remove duplicates
+    const topAlbums = [...topTracks, ...recentTracks]
+      .map(track => ({
+        id: track.albumId,
+        name: track.album,
+        artist: track.artist,
+        imageUri: track.imageUri,
+        spotifyUri: track.spotifyUri.replace('spotify:track:', 'spotify:album:'),
+        type: 'album',
+      }))
+      .filter((album, index, self) => 
+        album.id && index === self.findIndex(a => a.id === album.id)
+      );
+
+    // Extract artist IDs from top tracks for related content
+    const artistIds = [...new Set(
+      topTracks
+        .flatMap(track => track.artistIds || [])
+        .filter(id => id)
+    )].slice(0, 3);
+
+    // Get albums from user's top artists
+    let topArtistAlbums = [];
+    if (artistIds.length > 0) {
+      const artistAlbumsPromises = artistIds.map(artistId => 
+        getArtistAlbums(artistId, 'album', 5)
+      );
+      const artistAlbumsResults = await Promise.all(artistAlbumsPromises);
+      
+      topArtistAlbums = artistAlbumsResults
+        .flatMap(result => result.items || [])
+        .map(album => ({
+          id: album.id,
+          name: album.name,
+          artist: album.artists.map(a => a.name).join(', '),
+          imageUri: album.images[0]?.url,
+          spotifyUri: album.uri,
+          type: 'album',
+        }))
+        .filter((album, index, self) => 
+          index === self.findIndex(a => a.id === album.id)
+        );
+    }
+
+    // Get new releases
+    const newReleasesData = await getNewReleases(limit);
+    const newReleases = newReleasesData.albums?.items?.map(album => ({
+      id: album.id,
+      name: album.name,
+      artist: album.artists.map(a => a.name).join(', '),
+      imageUri: album.images[0]?.url,
+      spotifyUri: album.uri,
+      type: 'album',
+    })) || [];
+
+    return {
+      recentTracks,
+      topTracks,
+      recommendedTracks,
+      topArtistAlbums,
+      relatedAlbums: topAlbums,
+      newReleases,
+    };
+  } catch (error) {
+    console.error('Error getting personalized recommendations:', error);
+    return {
+      recentTracks: [],
+      topTracks: [],
+      recommendedTracks: [],
+      topArtistAlbums: [],
+      relatedAlbums: [],
+      newReleases: [],
+    };
+  }
+};

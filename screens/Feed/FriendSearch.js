@@ -163,9 +163,9 @@ export default function FriendSearch() {
             source={
               item.profilePicUrl
                 ? { uri: item.profilePicUrl }
-                : require("../../assets/babydoll.jpeg")
+                : require("../../assets/profile.jpg")
             }
-            defaultSource={require("../../assets/babydoll.jpeg")}
+            defaultSource={require("../../assets/profile.jpg")}
             style={styles.resultImage}
             onError={() => {}}
           />

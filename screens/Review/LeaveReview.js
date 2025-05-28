@@ -170,6 +170,7 @@ export default function LeaveReview({ route, navigation }) {
   };
 
   const handleSave = async () => {
+    trackEvent("leave_review");
     if (!selectedSong) {
       Alert.alert("Error", "Please select a song or album first");
       return;

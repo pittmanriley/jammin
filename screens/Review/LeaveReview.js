@@ -28,6 +28,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { theme } from "../../theme/theme";
+import { trackEvent } from "../../amplitude";
 
 export default function LeaveReview({ route, navigation }) {
   const { song, existingReview } = route.params || {};
@@ -170,18 +171,26 @@ export default function LeaveReview({ route, navigation }) {
   };
 
   const handleSave = async () => {
-    trackEvent("leave_review");
-    if (!selectedSong) {
-      Alert.alert("Error", "Please select a song or album first");
-      return;
-    }
-
-    if (rating === 0) {
-      Alert.alert("Error", "Please rate the item");
-      return;
-    }
-
     try {
+      trackEvent("leave_review", {
+        item_id: selectedSong?.id,
+        item_type: selectedSong?.type,
+        item_title: selectedSong?.name,
+        item_artist: selectedSong?.artist,
+        rating: rating,
+        has_review_text: !!reviewText,
+      });
+
+      if (!selectedSong) {
+        Alert.alert("Error", "Please select a song or album first");
+        return;
+      }
+
+      if (rating === 0) {
+        Alert.alert("Error", "Please rate the item");
+        return;
+      }
+
       const currentUser = auth.currentUser;
       if (!currentUser) {
         Alert.alert("Error", "You must be logged in to leave a review");

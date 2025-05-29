@@ -50,14 +50,16 @@ export default function NewPost({ navigation }) {
     tracks: [],
     albums: [],
   });
-  
+
   // Calculate dimensions for the grid
-  const screenWidth = Dimensions.get('window').width;
+  const screenWidth = Dimensions.get("window").width;
   const spacing = 15;
   const numColumns = 2;
   const contentPadding = 20;
   // Calculate item width to ensure proper centering
-  const itemWidth = (screenWidth - (spacing * (numColumns + 1)) - (contentPadding * 2)) / numColumns;
+  const itemWidth =
+    (screenWidth - spacing * (numColumns + 1) - contentPadding * 2) /
+    numColumns;
 
   useEffect(() => {
     checkSpotifyConnection();
@@ -65,7 +67,7 @@ export default function NewPost({ navigation }) {
       fetchRecommendations();
     }
   }, [spotifyConnected]);
-  
+
   // Function to fetch personalized recommendations
   const fetchRecommendations = async () => {
     try {
@@ -73,18 +75,18 @@ export default function NewPost({ navigation }) {
       // Get more recommendations for a better discovery experience
       const data = await getPersonalizedRecommendations(30);
       setRecommendations(data);
-      trackEvent("viewed_recommendations", { 
+      trackEvent("viewed_recommendations", {
         recentTracks: data.recentTracks.length,
         topTracks: data.topTracks.length,
-        newReleases: data.newReleases.length
+        newReleases: data.newReleases.length,
       });
     } catch (error) {
-      console.error('Error fetching recommendations:', error);
+      console.error("Error fetching recommendations:", error);
     } finally {
       setLoadingRecommendations(false);
     }
   };
-  
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchRecommendations();
@@ -183,7 +185,7 @@ export default function NewPost({ navigation }) {
         onPress={() => {
           // Handle navigation based on item type
           if (item.type === "album") {
-            navigation.navigate("Album", {
+            navigation.navigate("AlbumScreen", {
               id: item.id,
               title: item.name,
               artist: item.artist,
@@ -200,12 +202,19 @@ export default function NewPost({ navigation }) {
               spotifyUri: item.spotifyUri,
             });
           }
-          trackEvent("selected_recommendation", { type: item.type, fromGrid: true });
+          trackEvent("selected_recommendation", {
+            type: item.type,
+            fromGrid: true,
+          });
         }}
       >
         <View style={styles.gridItemImageContainer}>
           <Image
-            source={item.imageUri ? { uri: item.imageUri } : require("../../assets/profile.jpg")}
+            source={
+              item.imageUri
+                ? { uri: item.imageUri }
+                : require("../../assets/profile.jpg")
+            }
             style={styles.gridItemImage}
           />
           <View style={styles.gridItemTypeTag}>
@@ -215,8 +224,12 @@ export default function NewPost({ navigation }) {
           </View>
         </View>
         <View style={styles.gridItemTextContainer}>
-          <Text style={styles.gridItemName} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.gridItemArtist} numberOfLines={1}>{item.artist}</Text>
+          <Text style={styles.gridItemName} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={styles.gridItemArtist} numberOfLines={1}>
+            {item.artist}
+          </Text>
         </View>
       </TouchableOpacity>
     );
@@ -235,34 +248,47 @@ export default function NewPost({ navigation }) {
 
     // Combine all recommendations into a single array
     let allItems = [];
-    
+
     // Add albums from top artists
-    if (recommendations.topArtistAlbums && recommendations.topArtistAlbums.length > 0) {
+    if (
+      recommendations.topArtistAlbums &&
+      recommendations.topArtistAlbums.length > 0
+    ) {
       allItems = [...allItems, ...recommendations.topArtistAlbums];
     }
-    
+
     // Add albums from listening history
-    if (recommendations.relatedAlbums && recommendations.relatedAlbums.length > 0) {
+    if (
+      recommendations.relatedAlbums &&
+      recommendations.relatedAlbums.length > 0
+    ) {
       allItems = [...allItems, ...recommendations.relatedAlbums];
     }
-    
+
     // Add recommended tracks
-    if (recommendations.recommendedTracks && recommendations.recommendedTracks.length > 0) {
+    if (
+      recommendations.recommendedTracks &&
+      recommendations.recommendedTracks.length > 0
+    ) {
       allItems = [...allItems, ...recommendations.recommendedTracks];
     }
-    
+
     // Add top tracks
     if (recommendations.topTracks && recommendations.topTracks.length > 0) {
       allItems = [...allItems, ...recommendations.topTracks];
     }
-    
+
     // Shuffle the items to create a mixed grid of albums and songs
     const shuffledItems = [...allItems].sort(() => 0.5 - Math.random());
-    
+
     if (shuffledItems.length === 0) {
       return (
         <View style={styles.noResultsContainer}>
-          <Ionicons name="musical-notes" size={50} color={theme.text.secondary} />
+          <Ionicons
+            name="musical-notes"
+            size={50}
+            color={theme.text.secondary}
+          />
           <Text style={styles.noResultsText}>No recommendations available</Text>
         </View>
       );
@@ -426,7 +452,10 @@ export default function NewPost({ navigation }) {
                     if (newFilters.songs) {
                       setSearchResults([...allResults.tracks]);
                     } else {
-                      setSearchResults([...allResults.tracks, ...allResults.albums]);
+                      setSearchResults([
+                        ...allResults.tracks,
+                        ...allResults.albums,
+                      ]);
                     }
                   }, 10);
                 }}
@@ -458,7 +487,10 @@ export default function NewPost({ navigation }) {
                     if (newFilters.albums) {
                       setSearchResults([...allResults.albums]);
                     } else {
-                      setSearchResults([...allResults.tracks, ...allResults.albums]);
+                      setSearchResults([
+                        ...allResults.tracks,
+                        ...allResults.albums,
+                      ]);
                     }
                   }, 10);
                 }}
@@ -481,18 +513,18 @@ export default function NewPost({ navigation }) {
           <>
             <View style={styles.exploreHeaderContainer}>
               <Text style={styles.exploreHeader}>Discover & Review</Text>
-              <Text style={styles.exploreSubheader}>Personalized recommendations based on your listening history</Text>
+              <Text style={styles.exploreSubheader}>
+                Personalized recommendations based on your listening history
+              </Text>
             </View>
 
-            <View style={styles.gridContainer}>
-              {renderExploreGrid()}
-            </View>
+            <View style={styles.gridContainer}>{renderExploreGrid()}</View>
           </>
         )}
       </View>
     </TouchableWithoutFeedback>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -657,10 +689,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
-    width: '100%',
+    width: "100%",
   },
   columnWrapper: {
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     marginBottom: 15,
   },
   gridItem: {
@@ -668,31 +700,31 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   gridItemImageContainer: {
-    position: 'relative',
-    overflow: 'hidden',
+    position: "relative",
+    overflow: "hidden",
     borderRadius: 8,
     aspectRatio: 1,
-    width: '100%',
+    width: "100%",
     backgroundColor: theme.background.secondary,
   },
   gridItemImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
   gridItemTypeTag: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 6,
     right: 6,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: "rgba(0,0,0,0.7)",
     paddingVertical: 3,
     paddingHorizontal: 6,
     borderRadius: 4,
   },
   gridItemTypeText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 9,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   gridItemTextContainer: {
     marginTop: 6,
@@ -701,7 +733,7 @@ const styles = StyleSheet.create({
   gridItemName: {
     color: theme.text.primary,
     fontSize: 13,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   gridItemArtist: {
     color: theme.text.secondary,
@@ -714,7 +746,7 @@ const styles = StyleSheet.create({
   },
   exploreHeader: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: theme.text.primary,
   },
   exploreSubheader: {

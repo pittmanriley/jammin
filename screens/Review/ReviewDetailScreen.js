@@ -32,7 +32,7 @@ import { trackEvent } from "../../amplitude";
 
 export default function ReviewDetailScreen({ route, navigation }) {
   const { review } = route.params;
-  
+
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [replyTo, setReplyTo] = useState(null);
@@ -53,7 +53,7 @@ export default function ReviewDetailScreen({ route, navigation }) {
         }
       }
     };
-    
+
     getCurrentUser();
     fetchComments();
   }, []);
@@ -61,40 +61,40 @@ export default function ReviewDetailScreen({ route, navigation }) {
   const fetchComments = async () => {
     try {
       setLoading(true);
-      
+
       // Check if review has comments collection
       const commentsRef = collection(db, "reviews", review.id, "comments");
       const commentsQuery = query(commentsRef, orderBy("createdAt", "asc"));
       const commentsSnapshot = await getDocs(commentsQuery);
-      
+
       if (commentsSnapshot.empty) {
         setComments([]);
         setLoading(false);
         return;
       }
-      
+
       // Get all user IDs from comments to fetch usernames
       const userIds = new Set();
-      commentsSnapshot.forEach(doc => {
+      commentsSnapshot.forEach((doc) => {
         const commentData = doc.data();
         userIds.add(commentData.userId);
-        
+
         // Also add user IDs from replies
         if (commentData.replies && commentData.replies.length > 0) {
-          commentData.replies.forEach(reply => {
+          commentData.replies.forEach((reply) => {
             userIds.add(reply.userId);
           });
         }
       });
-      
+
       // Fetch all user documents at once
       const userDocs = await Promise.all(
-        Array.from(userIds).map(uid => getDoc(doc(db, "users", uid)))
+        Array.from(userIds).map((uid) => getDoc(doc(db, "users", uid)))
       );
-      
+
       // Create a map of user IDs to usernames
       const userMap = new Map();
-      userDocs.forEach(userDoc => {
+      userDocs.forEach((userDoc) => {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           userMap.set(
@@ -103,32 +103,32 @@ export default function ReviewDetailScreen({ route, navigation }) {
           );
         }
       });
-      
+
       // Process comments with usernames
       const commentsData = [];
-      commentsSnapshot.forEach(doc => {
+      commentsSnapshot.forEach((doc) => {
         const commentData = doc.data();
         const username = userMap.get(commentData.userId) || "User";
-        
+
         // Process replies if they exist
         let replies = [];
         if (commentData.replies && commentData.replies.length > 0) {
-          replies = commentData.replies.map(reply => ({
+          replies = commentData.replies.map((reply) => ({
             ...reply,
-            username: userMap.get(reply.userId) || "User"
+            username: userMap.get(reply.userId) || "User",
           }));
         }
-        
+
         commentsData.push({
           id: doc.id,
           ...commentData,
           username,
           replies,
           upvotes: commentData.upvotes || [],
-          downvotes: commentData.downvotes || []
+          downvotes: commentData.downvotes || [],
         });
       });
-      
+
       setComments(commentsData);
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -144,28 +144,34 @@ export default function ReviewDetailScreen({ route, navigation }) {
       Alert.alert("Error", "You need to be logged in to comment");
       return;
     }
-    
+
     try {
       setSubmitting(true);
-      
+
       if (replyTo) {
         // Add reply to existing comment
-        const commentRef = doc(db, "reviews", review.id, "comments", replyTo.id);
+        const commentRef = doc(
+          db,
+          "reviews",
+          review.id,
+          "comments",
+          replyTo.id
+        );
         const replyData = {
           userId: auth.currentUser.uid,
           text: commentText,
           createdAt: serverTimestamp(),
           upvotes: [],
-          downvotes: []
+          downvotes: [],
         };
-        
+
         await updateDoc(commentRef, {
-          replies: arrayUnion(replyData)
+          replies: arrayUnion(replyData),
         });
-        
+
         trackEvent("add_comment_reply", {
           review_id: review.id,
-          comment_id: replyTo.id
+          comment_id: replyTo.id,
         });
       } else {
         // Add new comment
@@ -175,19 +181,19 @@ export default function ReviewDetailScreen({ route, navigation }) {
           createdAt: serverTimestamp(),
           replies: [],
           upvotes: [],
-          downvotes: []
+          downvotes: [],
         };
-        
+
         await addDoc(
           collection(db, "reviews", review.id, "comments"),
           commentData
         );
-        
+
         trackEvent("add_comment", {
-          review_id: review.id
+          review_id: review.id,
         });
       }
-      
+
       // Clear input and refresh comments
       setCommentText("");
       setReplyTo(null);
@@ -205,53 +211,53 @@ export default function ReviewDetailScreen({ route, navigation }) {
       Alert.alert("Error", "You need to be logged in to vote");
       return;
     }
-    
+
     try {
       const userId = auth.currentUser.uid;
       const commentRef = doc(db, "reviews", review.id, "comments", commentId);
       const commentDoc = await getDoc(commentRef);
-      
+
       if (!commentDoc.exists()) {
         console.error("Comment not found");
         return;
       }
-      
+
       const commentData = commentDoc.data();
       const upvotes = commentData.upvotes || [];
       const downvotes = commentData.downvotes || [];
-      
+
       // Check if user already voted
       const hasUpvoted = upvotes.includes(userId);
       const hasDownvoted = downvotes.includes(userId);
-      
+
       if (voteType === "upvote") {
         if (hasUpvoted) {
           // Remove upvote
           await updateDoc(commentRef, {
-            upvotes: arrayRemove(userId)
+            upvotes: arrayRemove(userId),
           });
         } else {
           // Add upvote and remove downvote if exists
           await updateDoc(commentRef, {
             upvotes: arrayUnion(userId),
-            ...(hasDownvoted && { downvotes: arrayRemove(userId) })
+            ...(hasDownvoted && { downvotes: arrayRemove(userId) }),
           });
         }
       } else if (voteType === "downvote") {
         if (hasDownvoted) {
           // Remove downvote
           await updateDoc(commentRef, {
-            downvotes: arrayRemove(userId)
+            downvotes: arrayRemove(userId),
           });
         } else {
           // Add downvote and remove upvote if exists
           await updateDoc(commentRef, {
             downvotes: arrayUnion(userId),
-            ...(hasUpvoted && { upvotes: arrayRemove(userId) })
+            ...(hasUpvoted && { upvotes: arrayRemove(userId) }),
           });
         }
       }
-      
+
       // Refresh comments
       await fetchComments();
     } catch (error) {
@@ -298,64 +304,75 @@ export default function ReviewDetailScreen({ route, navigation }) {
   // Helper function to render a comment
   const renderComment = (comment, isReply = false) => {
     const currentUserId = auth.currentUser?.uid;
-    const hasUpvoted = currentUserId && comment.upvotes?.includes(currentUserId);
-    const hasDownvoted = currentUserId && comment.downvotes?.includes(currentUserId);
-    
+    const hasUpvoted =
+      currentUserId && comment.upvotes?.includes(currentUserId);
+    const hasDownvoted =
+      currentUserId && comment.downvotes?.includes(currentUserId);
+
     return (
-      <View key={comment.id || comment.createdAt} style={[styles.commentContainer, isReply && styles.replyContainer]}>
+      <View
+        key={comment.id || comment.createdAt}
+        style={[styles.commentContainer, isReply && styles.replyContainer]}
+      >
         <View style={styles.commentHeader}>
           <Text style={styles.commentUsername}>@{comment.username}</Text>
           {comment.createdAt && (
             <Text style={styles.commentDate}>
               {comment.createdAt.seconds
-                ? new Date(comment.createdAt.seconds * 1000).toLocaleDateString()
+                ? new Date(
+                    comment.createdAt.seconds * 1000
+                  ).toLocaleDateString()
                 : "Just now"}
             </Text>
           )}
         </View>
-        
+
         <Text style={styles.commentText}>{comment.text}</Text>
-        
+
         <View style={styles.commentActions}>
           {/* Upvote button */}
-          <TouchableOpacity 
-            style={styles.voteButton} 
+          <TouchableOpacity
+            style={styles.voteButton}
             onPress={() => !isReply && handleVote(comment.id, "upvote")}
             disabled={isReply}
           >
-            <Ionicons 
-              name={hasUpvoted ? "thumbs-up" : "thumbs-up-outline"} 
-              size={18} 
-              color={hasUpvoted ? theme.button.primary : theme.text.secondary} 
+            <Ionicons
+              name={hasUpvoted ? "thumbs-up" : "thumbs-up-outline"}
+              size={18}
+              color={hasUpvoted ? theme.button.primary : theme.text.secondary}
             />
             <Text style={[styles.voteCount, hasUpvoted && styles.activeVote]}>
               {comment.upvotes?.length || 0}
             </Text>
           </TouchableOpacity>
-          
+
           {/* Downvote button */}
-          <TouchableOpacity 
-            style={styles.voteButton} 
+          <TouchableOpacity
+            style={styles.voteButton}
             onPress={() => !isReply && handleVote(comment.id, "downvote")}
             disabled={isReply}
           >
-            <Ionicons 
-              name={hasDownvoted ? "thumbs-down" : "thumbs-down-outline"} 
-              size={18} 
-              color={hasDownvoted ? theme.button.primary : theme.text.secondary} 
+            <Ionicons
+              name={hasDownvoted ? "thumbs-down" : "thumbs-down-outline"}
+              size={18}
+              color={hasDownvoted ? theme.button.primary : theme.text.secondary}
             />
             <Text style={[styles.voteCount, hasDownvoted && styles.activeVote]}>
               {comment.downvotes?.length || 0}
             </Text>
           </TouchableOpacity>
-          
+
           {/* Reply button (only for main comments) */}
           {!isReply && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.replyButton}
               onPress={() => setReplyTo(comment)}
             >
-              <Ionicons name="chatbubble-outline" size={18} color={theme.text.secondary} />
+              <Ionicons
+                name="chatbubble-outline"
+                size={18}
+                color={theme.text.secondary}
+              />
               <Text style={styles.replyButtonText}>Reply</Text>
             </TouchableOpacity>
           )}
@@ -365,10 +382,10 @@ export default function ReviewDetailScreen({ route, navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={100}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -379,7 +396,11 @@ export default function ReviewDetailScreen({ route, navigation }) {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         {/* Review content - no grey box */}
         <Text style={styles.username}>@{review.username || "User"}</Text>
 
@@ -387,12 +408,10 @@ export default function ReviewDetailScreen({ route, navigation }) {
           <View style={styles.starsContainer}>
             {renderStars(review.rating)}
           </View>
-          <Text style={styles.ratingText}>
-            {review.rating.toFixed(1)}/5.0
-          </Text>
+          <Text style={styles.ratingText}>{review.rating.toFixed(1)}/5.0</Text>
         </View>
 
-        {review.review && review.review.trim() !== '' && (
+        {review.review && review.review.trim() !== "" && (
           <Text style={styles.reviewText}>"{review.review}"</Text>
         )}
 
@@ -404,27 +423,35 @@ export default function ReviewDetailScreen({ route, navigation }) {
           <Text style={styles.itemTitle}>{review.itemTitle}</Text>
           <Text style={styles.itemArtist}>{review.itemArtist}</Text>
         </View>
-        
+
         <View style={styles.divider} />
-        
+
         {/* Comments section */}
         <Text style={styles.sectionTitle}>Comments</Text>
-        
+
         {loading ? (
-          <ActivityIndicator size="small" color={theme.button.primary} style={styles.loader} />
+          <ActivityIndicator
+            size="small"
+            color={theme.button.primary}
+            style={styles.loader}
+          />
         ) : (
           <View style={styles.commentsContainer}>
             {comments.length === 0 ? (
-              <Text style={styles.emptyText}>No comments yet. Be the first to comment!</Text>
+              <Text style={styles.emptyText}>
+                No comments yet. Be the first to comment!
+              </Text>
             ) : (
-              comments.map(comment => (
+              comments.map((comment) => (
                 <View key={comment.id}>
                   {renderComment(comment)}
-                  
+
                   {/* Render replies */}
                   {comment.replies && comment.replies.length > 0 && (
                     <View style={styles.repliesContainer}>
-                      {comment.replies.map(reply => renderComment(reply, true))}
+                      {comment.replies.map((reply) =>
+                        renderComment(reply, true)
+                      )}
                     </View>
                   )}
                 </View>
@@ -432,20 +459,25 @@ export default function ReviewDetailScreen({ route, navigation }) {
             )}
           </View>
         )}
-        
+
         {/* Reply to indicator */}
         {replyTo && (
           <View style={styles.replyingToContainer}>
             <Text style={styles.replyingToText}>
-              Replying to <Text style={styles.replyingToUsername}>@{replyTo.username}</Text>
+              Replying to{" "}
+              <Text style={styles.replyingToUsername}>@{replyTo.username}</Text>
             </Text>
             <TouchableOpacity onPress={() => setReplyTo(null)}>
-              <Ionicons name="close-circle" size={20} color={theme.text.secondary} />
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={theme.text.secondary}
+              />
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
-      
+
       {/* Comment input */}
       <View style={styles.commentInputContainer}>
         <TextInput
@@ -456,8 +488,11 @@ export default function ReviewDetailScreen({ route, navigation }) {
           onChangeText={setCommentText}
           multiline
         />
-        <TouchableOpacity 
-          style={[styles.sendButton, !commentText.trim() && styles.disabledButton]} 
+        <TouchableOpacity
+          style={[
+            styles.sendButton,
+            !commentText.trim() && styles.disabledButton,
+          ]}
           onPress={handleAddComment}
           disabled={!commentText.trim() || submitting}
         >
@@ -485,6 +520,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 10,
     backgroundColor: theme.background.primary,
+    zIndex: 1,
   },
   headerTitle: {
     color: theme.text.primary,
@@ -494,7 +530,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
-    paddingBottom: 100, // Extra padding for comment input
   },
   username: {
     color: theme.text.primary,
@@ -651,7 +686,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.background.secondary,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 30,
+    zIndex: 2,
   },
   commentInput: {
     flex: 1,
